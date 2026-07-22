@@ -1,0 +1,193 @@
+{
+  "info": {
+    "name": "Wallet App API",
+    "description": "Collection for the Wallet App backend (Laravel). Set {{base_url}} and {{token}} in the environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api/v1" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        { "name": "Register", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/register", "body": { "mode": "raw", "raw": "{\n  \"name\": \"Alice\",\n  \"phone\": \"9000000001\"\n}" } } },
+        { "name": "Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/login", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\"\n}" } } },
+        { "name": "Verify OTP", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/verify-otp", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\",\n  \"otp\": \"123456\",\n  \"purpose\": \"registration\",\n  \"device\": {\n    \"device_id\": \"device-1\",\n    \"device_name\": \"Pixel 8\",\n    \"platform\": \"android\",\n    \"fcm_token\": \"sample-token\"\n  }\n}" } } },
+        { "name": "Resend OTP", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/resend-otp", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\",\n  \"purpose\": \"registration\"\n}" } } },
+        { "name": "Forgot PIN", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/forgot-pin", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\"\n}" } } },
+        { "name": "Reset PIN", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/reset-pin", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\",\n  \"otp\": \"123456\",\n  \"pin\": \"111111\",\n  \"pin_confirmation\": \"111111\"\n}" } } },
+        { "name": "Me", "request": { "method": "GET", "url": "{{base_url}}/auth/me" } },
+        { "name": "Logout", "request": { "method": "POST", "url": "{{base_url}}/auth/logout" } },
+        { "name": "Logout All Devices", "request": { "method": "POST", "url": "{{base_url}}/auth/logout-all" } },
+        { "name": "Refresh Token", "request": { "method": "POST", "url": "{{base_url}}/auth/refresh" } },
+        { "name": "Deactivate Account", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/deactivate", "body": { "mode": "raw", "raw": "{\n  \"pin\": \"111111\"\n}" } } },
+        { "name": "Delete Account", "request": { "method": "DELETE", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/account", "body": { "mode": "raw", "raw": "{\n  \"pin\": \"111111\"\n}" } } }
+      ]
+    },
+    {
+      "name": "Devices",
+      "item": [
+        { "name": "List Devices", "request": { "method": "GET", "url": "{{base_url}}/devices" } },
+        { "name": "Update FCM Token", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/devices/fcm-token", "body": { "mode": "raw", "raw": "{\n  \"device_id\": \"device-1\",\n  \"fcm_token\": \"new-token\"\n}" } } },
+        { "name": "Remove Device", "request": { "method": "DELETE", "url": "{{base_url}}/devices/1" } }
+      ]
+    },
+    {
+      "name": "PIN",
+      "item": [
+        { "name": "Set PIN", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/pin", "body": { "mode": "raw", "raw": "{\n  \"pin\": \"111111\",\n  \"pin_confirmation\": \"111111\"\n}" } } },
+        { "name": "Change PIN", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/pin", "body": { "mode": "raw", "raw": "{\n  \"current_pin\": \"111111\",\n  \"pin\": \"222222\",\n  \"pin_confirmation\": \"222222\"\n}" } } }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        { "name": "Get Balance", "request": { "method": "GET", "header": [{"key":"X-Pin","value":"111111"}], "url": "{{base_url}}/wallet" } },
+        { "name": "Mini Statement", "request": { "method": "GET", "url": "{{base_url}}/wallet/statement/mini" } },
+        { "name": "Full Statement", "request": { "method": "GET", "url": "{{base_url}}/wallet/statement/full?per_page=20" } }
+      ]
+    },
+    {
+      "name": "Bank Accounts",
+      "item": [
+        { "name": "List Banks", "request": { "method": "GET", "url": "{{base_url}}/banks" } },
+        { "name": "Add Bank", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/banks", "body": { "mode": "raw", "raw": "{\n  \"bank_name\": \"HDFC Bank\",\n  \"account_holder_name\": \"Alice\",\n  \"account_number\": \"123456789012\",\n  \"ifsc_code\": \"HDFC0001234\"\n}" } } },
+        { "name": "Update Bank", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/banks/1", "body": { "mode": "raw", "raw": "{\n  \"bank_name\": \"HDFC Bank Ltd\"\n}" } } },
+        { "name": "Set Primary", "request": { "method": "POST", "url": "{{base_url}}/banks/1/primary" } },
+        { "name": "Delete Bank", "request": { "method": "DELETE", "url": "{{base_url}}/banks/1" } }
+      ]
+    },
+    {
+      "name": "Limits",
+      "item": [
+        { "name": "Get Usage & Limits", "request": { "method": "GET", "url": "{{base_url}}/limits" } }
+      ]
+    },
+    {
+      "name": "Transfers",
+      "item": [
+        { "name": "Wallet to Wallet", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/transfers/wallet-to-wallet", "body": { "mode": "raw", "raw": "{\n  \"receiver\": \"9000000002@wallet\",\n  \"amount\": 100,\n  \"pin\": \"111111\",\n  \"note\": \"Lunch\"\n}" } } },
+        { "name": "Wallet to Bank", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/transfers/wallet-to-bank", "body": { "mode": "raw", "raw": "{\n  \"bank_account_id\": 1,\n  \"amount\": 500,\n  \"pin\": \"111111\"\n}" } } },
+        { "name": "Bank to Wallet", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/transfers/bank-to-wallet", "body": { "mode": "raw", "raw": "{\n  \"bank_account_id\": 1,\n  \"amount\": 1000\n}" } } },
+        { "name": "History", "request": { "method": "GET", "url": "{{base_url}}/transfers?per_page=20" } },
+        { "name": "Show One", "request": { "method": "GET", "url": "{{base_url}}/transfers/TXN20260717081340959K" } }
+      ]
+    },
+    {
+      "name": "QR",
+      "item": [
+        { "name": "My QR", "request": { "method": "GET", "url": "{{base_url}}/qr" } },
+        { "name": "Download QR", "request": { "method": "GET", "url": "{{base_url}}/qr/download" } },
+        { "name": "Validate QR", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/qr/validate", "body": { "mode": "raw", "raw": "{\n  \"payload\": \"9000000002@wallet\"\n}" } } }
+      ]
+    },
+    {
+      "name": "Rewards",
+      "item": [
+        { "name": "List Rewards", "request": { "method": "GET", "url": "{{base_url}}/rewards" } },
+        { "name": "Summary", "request": { "method": "GET", "url": "{{base_url}}/rewards/summary" } },
+        { "name": "Scratch", "request": { "method": "POST", "url": "{{base_url}}/rewards/1/scratch" } },
+        { "name": "Redeem", "request": { "method": "POST", "url": "{{base_url}}/rewards/1/redeem" } }
+      ]
+    },
+    {
+      "name": "Verification",
+      "item": [
+        { "name": "Submit Verification", "request": { "method": "POST",
+          "url": "{{base_url}}/verification",
+          "body": { "mode": "formdata", "formdata": [
+            { "key": "passport_number", "value": "P1234567", "type": "text" },
+            { "key": "passport_expiry", "value": "2030-01-01", "type": "text" },
+            { "key": "passport_image", "type": "file", "src": "" },
+            { "key": "selfie_image", "type": "file", "src": "" }
+          ] } } },
+        { "name": "Current Status", "request": { "method": "GET", "url": "{{base_url}}/verification" } },
+        { "name": "History", "request": { "method": "GET", "url": "{{base_url}}/verification/history" } }
+      ]
+    },
+    {
+      "name": "Virtual Card",
+      "item": [
+        { "name": "Show Virtual Card", "request": { "method": "GET", "url": "{{base_url}}/virtual-card" } }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        { "name": "List Notifications", "request": { "method": "GET", "url": "{{base_url}}/notifications" } },
+        { "name": "Unread Count", "request": { "method": "GET", "url": "{{base_url}}/notifications/unread-count" } },
+        { "name": "Mark One Read", "request": { "method": "POST", "url": "{{base_url}}/notifications/00000000-0000-0000-0000-000000000000/read" } },
+        { "name": "Mark All Read", "request": { "method": "POST", "url": "{{base_url}}/notifications/read-all" } }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        { "name": "Admin Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/auth/login", "body": { "mode": "raw", "raw": "{\n  \"username\": \"superadmin\",\n  \"password\": \"ChangeMe123!\"\n}" } } },
+        { "name": "Admin Forgot Password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/auth/forgot-password", "body": { "mode": "raw", "raw": "{\n  \"username\": \"superadmin\"\n}" } } },
+        { "name": "Admin Reset Password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/auth/reset-password", "body": { "mode": "raw", "raw": "{\n  \"username\": \"superadmin\",\n  \"otp\": \"123456\",\n  \"password\": \"NewPass123!\",\n  \"password_confirmation\": \"NewPass123!\"\n}" } } },
+        { "name": "Dashboard", "request": { "method": "GET", "url": "{{base_url}}/admin/dashboard" } },
+        { "name": "List Users", "request": { "method": "GET", "url": "{{base_url}}/admin/users?per_page=20" } },
+        { "name": "Show User", "request": { "method": "GET", "url": "{{base_url}}/admin/users/1" } },
+        { "name": "Update User Status", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/users/1/status", "body": { "mode": "raw", "raw": "{\n  \"status\": \"deactivated\"\n}" } } },
+        { "name": "Update User Tier", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/users/1/tier", "body": { "mode": "raw", "raw": "{\n  \"tier\": \"verified\"\n}" } } },
+        { "name": "Assign Role", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/users/1/role", "body": { "mode": "raw", "raw": "{\n  \"role\": \"support\"\n}" } } },
+        { "name": "Set Admin Credentials", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/users/1/credentials", "body": { "mode": "raw", "raw": "{\n  \"username\": \"alice_support\",\n  \"password\": \"SupportPass1!\"\n}" } } },
+        { "name": "List Wallets", "request": { "method": "GET", "url": "{{base_url}}/admin/wallets?per_page=20" } },
+        { "name": "Freeze Wallet", "request": { "method": "POST", "url": "{{base_url}}/admin/wallets/1/freeze" } },
+        { "name": "Unfreeze Wallet", "request": { "method": "POST", "url": "{{base_url}}/admin/wallets/1/unfreeze" } },
+        { "name": "Adjust Wallet", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/wallets/1/adjust", "body": { "mode": "raw", "raw": "{\n  \"type\": \"credit\",\n  \"amount\": 500,\n  \"reason\": \"Goodwill credit\"\n}" } } },
+        { "name": "List Transactions", "request": { "method": "GET", "url": "{{base_url}}/admin/transactions?per_page=20" } },
+        { "name": "Show Transaction", "request": { "method": "GET", "url": "{{base_url}}/admin/transactions/TXN20260717081340959K" } },
+        { "name": "Reverse Transaction", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/transactions/TXN20260717081340959K/reverse", "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Customer dispute\"\n}" } } },
+        { "name": "List Reward Cards", "request": { "method": "GET", "url": "{{base_url}}/admin/rewards?per_page=20" } },
+        { "name": "List Verifications", "request": { "method": "GET", "url": "{{base_url}}/admin/verifications?status=pending" } },
+        { "name": "Approve Verification", "request": { "method": "POST", "url": "{{base_url}}/admin/verifications/1/approve" } },
+        { "name": "Reject Verification", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/verifications/1/reject", "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Passport image unreadable\"\n}" } } },
+        { "name": "List Bank Accounts", "request": { "method": "GET", "url": "{{base_url}}/admin/banks?per_page=20" } },
+        { "name": "Verify Bank Account", "request": { "method": "POST", "url": "{{base_url}}/admin/banks/1/verify" } },
+        { "name": "Transactions Summary Report", "request": { "method": "GET", "url": "{{base_url}}/admin/reports/transactions-summary" } },
+        { "name": "Broadcast Notification", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/admin/notifications/broadcast", "body": { "mode": "raw", "raw": "{\n  \"title\": \"Scheduled maintenance\",\n  \"body\": \"The app will be down for maintenance tonight at 2 AM.\"\n}" } } },
+        { "name": "List Roles", "request": { "method": "GET", "url": "{{base_url}}/admin/roles" } },
+        { "name": "List Permissions", "request": { "method": "GET", "url": "{{base_url}}/admin/permissions" } },
+        { "name": "Settings", "request": { "method": "GET", "url": "{{base_url}}/admin/settings" } },
+        { "name": "Limits Config", "request": { "method": "GET", "url": "{{base_url}}/admin/limits" } },
+        { "name": "Logs", "request": { "method": "GET", "url": "{{base_url}}/admin/logs?lines=200" } }
+      ]
+    }
+  ]
+}
