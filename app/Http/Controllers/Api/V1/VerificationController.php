@@ -22,8 +22,8 @@ class VerificationController extends Controller
     {
         $verification = $this->verificationService->submit(
             $request->user(),
-            $request->only(['passport_number', 'passport_expiry']),
-            $request->file('passport_image'),
+            $request->only(['document_number', 'document_expiry']),
+            $request->file('document_image'),
             $request->file('selfie_image')
         );
 

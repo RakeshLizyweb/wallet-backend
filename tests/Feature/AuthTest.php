@@ -15,6 +15,7 @@ class AuthTest extends TestCase
         $response = $this->postJson('/api/v1/auth/register', [
             'name' => 'Test User',
             'phone' => '9876543210',
+            'nationality' => 'Ivory Coast',
         ]);
 
         $response->assertOk()->assertJsonPath('success', true);
@@ -45,7 +46,7 @@ class AuthTest extends TestCase
 
     public function test_invalid_otp_is_rejected(): void
     {
-        $this->postJson('/api/v1/auth/register', ['name' => 'Test User', 'phone' => '9876543211']);
+        $this->postJson('/api/v1/auth/register', ['name' => 'Test User', 'phone' => '9876543211', 'nationality' => 'India']);
 
         $response = $this->postJson('/api/v1/auth/verify-otp', [
             'phone' => '9876543211',
@@ -93,7 +94,7 @@ class AuthTest extends TestCase
 
     public function test_resend_otp_respects_cooldown(): void
     {
-        $this->postJson('/api/v1/auth/register', ['name' => 'Test User', 'phone' => '9876543212']);
+        $this->postJson('/api/v1/auth/register', ['name' => 'Test User', 'phone' => '9876543212', 'nationality' => 'India']);
 
         $response = $this->postJson('/api/v1/auth/resend-otp', [
             'phone' => '9876543212',
@@ -101,6 +102,29 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(429);
+    }
+
+    public function test_user_can_update_nationality_after_registration(): void
+    {
+        $user = User::factory()->create(['nationality' => 'India']);
+
+        $response = $this->actingAs($user, 'sanctum')->putJson('/api/v1/auth/nationality', [
+            'nationality' => 'Ivory Coast',
+        ]);
+
+        $response->assertOk()->assertJsonPath('data.nationality', 'Ivory Coast');
+        $this->assertEquals('Ivory Coast', $user->fresh()->nationality);
+    }
+
+    public function test_updating_nationality_rejects_unknown_country(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'sanctum')->putJson('/api/v1/auth/nationality', [
+            'nationality' => 'Narnia',
+        ]);
+
+        $response->assertStatus(422);
     }
 
     public function test_unauthenticated_request_returns_clean_json_regardless_of_accept_header(): void

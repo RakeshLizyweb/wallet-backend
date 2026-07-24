@@ -11,8 +11,9 @@ class VerificationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'passport_number' => $this->passport_number,
-            'passport_expiry' => $this->passport_expiry?->toDateString(),
+            'document_type' => $this->document_type?->value,
+            'document_number' => $this->document_number,
+            'document_expiry' => $this->document_expiry?->toDateString(),
             'status' => $this->status?->value,
             'rejection_reason' => $this->rejection_reason,
             'reviewed_at' => $this->reviewed_at?->toIso8601String(),

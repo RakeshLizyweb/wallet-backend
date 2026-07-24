@@ -58,7 +58,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
         Route::get('/', [VerificationController::class, 'index'])->name('index');
         Route::post('{verification}/approve', [VerificationController::class, 'approve'])->name('approve');
         Route::post('{verification}/reject', [VerificationController::class, 'reject'])->name('reject');
-        Route::get('{verification}/passport-image', [VerificationController::class, 'passportImage'])->name('passport-image');
+        Route::get('{verification}/document-image', [VerificationController::class, 'documentImage'])->name('document-image');
         Route::get('{verification}/selfie-image', [VerificationController::class, 'selfieImage'])->name('selfie-image');
     });
 

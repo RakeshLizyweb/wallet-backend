@@ -17,7 +17,7 @@
       "name": "Auth",
       "item": [
         { "name": "Register", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
-          "url": "{{base_url}}/auth/register", "body": { "mode": "raw", "raw": "{\n  \"name\": \"Alice\",\n  \"phone\": \"9000000001\"\n}" } } },
+          "url": "{{base_url}}/auth/register", "body": { "mode": "raw", "raw": "{\n  \"name\": \"Alice\",\n  \"phone\": \"9000000001\",\n  \"nationality\": \"Ivory Coast\"\n}" } } },
         { "name": "Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
           "url": "{{base_url}}/auth/login", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\"\n}" } } },
         { "name": "Verify OTP", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
@@ -29,6 +29,8 @@
         { "name": "Reset PIN", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
           "url": "{{base_url}}/auth/reset-pin", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\",\n  \"otp\": \"123456\",\n  \"pin\": \"111111\",\n  \"pin_confirmation\": \"111111\"\n}" } } },
         { "name": "Me", "request": { "method": "GET", "url": "{{base_url}}/auth/me" } },
+        { "name": "Update Nationality", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
+          "url": "{{base_url}}/auth/nationality", "body": { "mode": "raw", "raw": "{\n  \"nationality\": \"Ivory Coast\"\n}" } } },
         { "name": "Logout", "request": { "method": "POST", "url": "{{base_url}}/auth/logout" } },
         { "name": "Logout All Devices", "request": { "method": "POST", "url": "{{base_url}}/auth/logout-all" } },
         { "name": "Refresh Token", "request": { "method": "POST", "url": "{{base_url}}/auth/refresh" } },
@@ -119,9 +121,9 @@
         { "name": "Submit Verification", "request": { "method": "POST",
           "url": "{{base_url}}/verification",
           "body": { "mode": "formdata", "formdata": [
-            { "key": "passport_number", "value": "P1234567", "type": "text" },
-            { "key": "passport_expiry", "value": "2030-01-01", "type": "text" },
-            { "key": "passport_image", "type": "file", "src": "" },
+            { "key": "document_number", "value": "P1234567", "type": "text" },
+            { "key": "document_expiry", "value": "2030-01-01", "type": "text" },
+            { "key": "document_image", "type": "file", "src": "" },
             { "key": "selfie_image", "type": "file", "src": "" }
           ] } } },
         { "name": "Current Status", "request": { "method": "GET", "url": "{{base_url}}/verification" } },

@@ -86,6 +86,7 @@ Rate limit: `auth`
 |---|---|---|
 | name | string | required, 2–100 chars |
 | phone | string | required, 10–15 digits, optional leading `+` |
+| nationality | string | required, must be one of `config('countries.list')` |
 
 **Response 200**
 ```json
@@ -125,6 +126,7 @@ Rate limit: `auth`. Finalizes registration or login and issues a Sanctum token.
   "message": "Authenticated successfully.",
   "data": {
     "user": { "id": 1, "name": "Alice", "phone": "9876543210", "phone_verified": true,
+      "nationality": "Ivory Coast", "document_type": null, "document_number": null,
       "upi_handle": "9876543210@wallet", "status": "active", "tier": "basic",
       "has_pin": false, "created_at": "2026-07-17T07:25:27+00:00" },
     "token": "1|abcdef...",
@@ -146,6 +148,9 @@ Rate limit: `auth`.
 
 ### Me — `GET /auth/me` 🔑 auth
 Returns the authenticated user's profile (`UserResource`).
+
+### Update nationality — `PUT /auth/nationality` 🔑 auth
+**Body:** `{ "nationality": "Ivory Coast" }` — must be one of `config('countries.list')`. Changeable anytime after registration; only affects which document type is required on *future* verification submissions (past submissions keep the `document_type` they were submitted with).
 
 ### Logout — `POST /auth/logout` 🔑 auth
 Revokes the current access token only.
@@ -335,14 +340,16 @@ Cashback/lucky rewards are credited to the wallet; points add to `reward_points`
 
 ### Submit — `POST /verification` 🔑 auth (multipart/form-data)
 
+Document type is decided server-side from the user's `nationality` (set at registration), not sent by the client: **Ivory Coast** nationals submit their national citizen ID; everyone else submits a passport.
+
 | Field | Rules |
 |---|---|
-| passport_number | required, string, max 20 |
-| passport_expiry | required, date, must be > 6 months in the future |
-| passport_image | required, image, max 5MB |
+| document_number | required, string, max 20 |
+| document_expiry | required, date, must be > 6 months in the future |
+| document_image | required, image, max 5MB |
 | selfie_image | required, image, max 5MB |
 
-Rejected if a verification is already `approved`, or another is still `pending`.
+Rejected if a verification is already `approved`, or another is still `pending`. The response's `document_type` field is `passport` or `citizen_id`.
 
 ### Current status — `GET /verification` 🔑 auth
 ### History — `GET /verification/history` 🔑 auth
@@ -437,7 +444,7 @@ Aggregate counts: users, wallets (total/frozen balance), transactions (today/pen
 - `GET /admin/verifications` — query: `status`, `per_page`.
 - `POST /admin/verifications/{verification}/approve`
 - `POST /admin/verifications/{verification}/reject` — body `{ "reason": "..." }`
-- `GET /admin/verifications/{verification}/passport-image` — streams the uploaded passport photo (binary, `Bearer` auth required — not a public URL)
+- `GET /admin/verifications/{verification}/document-image` — streams the uploaded passport/citizen ID photo (binary, `Bearer` auth required — not a public URL)
 - `GET /admin/verifications/{verification}/selfie-image` — streams the uploaded selfie (binary, `Bearer` auth required)
 
 ### Bank Management

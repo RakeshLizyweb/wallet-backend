@@ -10,6 +10,7 @@ use App\Http\Requests\Auth\PinConfirmationRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResendOtpRequest;
 use App\Http\Requests\Auth\ResetPinRequest;
+use App\Http\Requests\Auth\UpdateNationalityRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
@@ -27,7 +28,7 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        $result = $this->authService->register($request->name, $request->phone, $request->ip());
+        $result = $this->authService->register($request->name, $request->phone, $request->nationality, $request->ip());
 
         return $this->success(
             ['phone' => $result['user']->phone, 'debug_otp' => $result['otp']->plain_code ?? null],
@@ -124,5 +125,12 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return $this->success(new UserResource($request->user()));
+    }
+
+    public function updateNationality(UpdateNationalityRequest $request): JsonResponse
+    {
+        $user = $this->authService->updateNationality($request->user(), $request->nationality);
+
+        return $this->success(new UserResource($user), 'Nationality updated.');
     }
 }

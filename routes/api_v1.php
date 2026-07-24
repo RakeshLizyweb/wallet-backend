@@ -32,6 +32,7 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me'])->name('me');
+        Route::put('nationality', [AuthController::class, 'updateNationality'])->name('nationality');
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
         Route::post('logout-all', [AuthController::class, 'logoutAllDevices'])->name('logout-all');
         Route::post('refresh', [AuthController::class, 'refresh'])->name('refresh');
