@@ -30,6 +30,7 @@ class User extends Authenticatable
         'name',
         'phone',
         'phone_verified_at',
+        'nationality',
         'email',
         'username',
         'password',
@@ -88,6 +89,16 @@ class User extends Authenticatable
     public function scratchCards(): HasMany
     {
         return $this->hasMany(ScratchCard::class);
+    }
+
+    public function identityVerifications(): HasMany
+    {
+        return $this->hasMany(IdentityVerification::class);
+    }
+
+    public function latestIdentityVerification(): HasOne
+    {
+        return $this->hasOne(IdentityVerification::class)->latestOfMany();
     }
 
     public function hasPin(): bool

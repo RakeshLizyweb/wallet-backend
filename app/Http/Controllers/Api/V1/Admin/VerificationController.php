@@ -6,19 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RejectRequest;
 use App\Http\Resources\Admin\AdminVerificationResource;
 use App\Models\IdentityVerification;
+use App\Services\CloudinaryService;
 use App\Services\VerificationService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Http\Response;
 
 class VerificationController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(protected VerificationService $verificationService)
-    {
+    public function __construct(
+        protected VerificationService $verificationService,
+        protected CloudinaryService $cloudinary,
+    ) {
     }
 
     public function index(Request $request): JsonResponse
@@ -45,13 +47,17 @@ class VerificationController extends Controller
         return $this->success(new AdminVerificationResource($verification), 'Verification rejected.');
     }
 
-    public function passportImage(IdentityVerification $verification): StreamedResponse
+    public function documentImage(IdentityVerification $verification): Response
     {
-        return Storage::disk('local')->response($verification->passport_image_path);
+        $image = $this->cloudinary->fetchImage($verification->document_image_path);
+
+        return response($image['body'], 200, ['Content-Type' => $image['content_type']]);
     }
 
-    public function selfieImage(IdentityVerification $verification): StreamedResponse
+    public function selfieImage(IdentityVerification $verification): Response
     {
-        return Storage::disk('local')->response($verification->selfie_image_path);
+        $image = $this->cloudinary->fetchImage($verification->selfie_image_path);
+
+        return response($image['body'], 200, ['Content-Type' => $image['content_type']]);
     }
 }

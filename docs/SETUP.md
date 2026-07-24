@@ -60,7 +60,7 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Then edit `.env` — see §17 for the full variable reference. At minimum, set:
+Then edit `.env` — see §18 for the full variable reference. At minimum, set:
 - `DB_*` — your MySQL credentials (see §5)
 - `APP_URL` — the base URL the API will be served from
 
@@ -123,9 +123,9 @@ php artisan migrate:fresh --seed
 
 ## 8. Storage Linking
 
-KYC documents (passport/selfie images) are stored on the **private** `local` disk (`storage/app/private`) — intentionally **not** symlinked to `public/storage`, since these are sensitive documents that must never be publicly reachable by URL.
+KYC documents (passport/citizen ID + selfie images) are stored on **Cloudinary** as private (`type: authenticated`) assets — see §14 for configuration. They are never publicly reachable by URL; `CloudinaryService::fetchImage()` downloads them server-side via a freshly signed delivery URL, and the admin panel only ever receives them proxied through `GET /admin/verifications/{id}/document-image` / `.../selfie-image` (Bearer-auth required).
 
-If you later add genuinely public assets (e.g. marketing images), link the public disk with:
+If you add genuinely public local assets (e.g. marketing images) to the `public` disk, link it with:
 ```bash
 php artisan storage:link
 ```
@@ -150,7 +150,7 @@ This project uses **token-based** auth only (mobile + admin panel both send `Aut
 ```bash
 php artisan queue:work
 ```
-For production, run this under a process supervisor (see §11 and §19).
+For production, run this under a process supervisor (see §11 and §20).
 
 ---
 
@@ -193,7 +193,24 @@ Push notifications are sent via Firebase Cloud Messaging's HTTP v1 API. To enabl
 
 ---
 
-## 14. OTP Provider Configuration (placeholder)
+## 14. Cloudinary Configuration (KYC Document Storage)
+
+Identity verification photos (passport/citizen ID + selfie) are uploaded to Cloudinary as **private** assets (`type: authenticated`) via `App\Services\CloudinaryService`. They are never publicly reachable by URL — even someone with the exact Cloudinary `public_id` gets a 401 without a validly signed request.
+
+1. Create a free account at cloudinary.com and grab your Cloud name, API key, and API secret from the dashboard.
+2. Set in `.env`:
+   ```
+   CLOUDINARY_CLOUD_NAME=your-cloud-name
+   CLOUDINARY_API_KEY=your-api-key
+   CLOUDINARY_API_SECRET=your-api-secret
+   ```
+3. Uploads go through `CloudinaryService::uploadPrivateImage()`, which stores the returned Cloudinary `public_id` in the `identity_verifications.document_image_path` / `selfie_image_path` columns (naming is historical — they hold a Cloudinary public_id, not a filesystem path).
+4. The admin panel never talks to Cloudinary directly. `GET /admin/verifications/{id}/document-image` and `.../selfie-image` fetch the bytes server-side via `CloudinaryService::fetchImage()` (a freshly signed URL, requested with `Http::get()`) and stream them back through our own Bearer-authenticated endpoint — the same access-control model as before, just backed by Cloudinary instead of local disk.
+5. There is no offline/local fallback — these credentials are required for the verification submit flow to work at all, since that's the only place in the app that accepts image uploads.
+
+---
+
+## 15. OTP Provider Configuration (placeholder)
 
 OTPs are currently **logged only** (`Log::info(...)` in `OtpService::generate()`) and, in `local`/`testing` environments, returned in the API response as `debug_otp` for easy testing. To wire a real SMS provider (Twilio, MSG91, etc.):
 
@@ -204,7 +221,7 @@ OTPs are currently **logged only** (`Log::info(...)` in `OtpService::generate()`
 
 ---
 
-## 15. API Testing
+## 16. API Testing
 
 Run the automated test suite (uses an in-memory SQLite database, configured in `phpunit.xml` — no setup needed):
 ```bash
@@ -215,7 +232,7 @@ For manual testing, start the dev server:
 ```bash
 php artisan serve
 ```
-and either use the Postman collection (§16) or curl, e.g.:
+and either use the Postman collection (§17) or curl, e.g.:
 ```bash
 curl -X POST http://127.0.0.1:8000/api/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -224,7 +241,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/auth/register \
 
 ---
 
-## 16. Postman Collection
+## 17. Postman Collection
 
 Import [`docs/postman_collection.json`](postman_collection.json) into Postman. It defines two collection variables:
 - `base_url` — defaults to `http://localhost:8000/api/v1`
@@ -234,7 +251,7 @@ Endpoints are grouped into folders matching this document's sections (Auth, Devi
 
 ---
 
-## 17. Environment Variables Reference
+## 18. Environment Variables Reference
 
 | Variable | Purpose | Default |
 |---|---|---|
@@ -243,6 +260,7 @@ Endpoints are grouped into folders matching this document's sections (Auth, Devi
 | `DB_*` | MySQL connection | — |
 | `CORS_ALLOWED_ORIGINS` | comma-separated allowed origins for browser clients (Admin-Web), or `*` | `*` |
 | `FCM_PROJECT_ID` / `FCM_ACCESS_TOKEN` | push notifications (§13) | blank = log-only |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | KYC document/selfie storage (§14) — required, no fallback | — |
 | `WALLET_CURRENCY` | default wallet currency code | `XOF` |
 | `OTP_LENGTH` / `OTP_EXPIRY_MINUTES` / `OTP_MAX_ATTEMPTS` / `OTP_RESEND_COOLDOWN_SECONDS` | OTP behavior | 6 / 5 / 5 / 60 |
 | `PIN_LENGTH` / `PIN_MAX_ATTEMPTS` / `PIN_LOCKOUT_MINUTES` | PIN behavior | 6 / 5 / 15 |
@@ -256,7 +274,7 @@ All of the above are read via `config/wallet.php` and `config/services.php` — 
 
 ---
 
-## 18. Folder Structure
+## 19. Folder Structure
 
 ```
 app/
@@ -300,7 +318,7 @@ tests/
 
 ---
 
-## 19. Deployment Guide
+## 20. Deployment Guide
 
 1. **Server requirements:** PHP-FPM 8.2+ (with `gd`, `pdo_mysql`, `bcmath`), MySQL 8+, Nginx or Apache, a process manager (systemd/Supervisor) if you add queue workers.
 2. **Deploy the code** (git pull or CI artifact), then:
@@ -320,7 +338,7 @@ tests/
 
 ---
 
-## 20. Production Checklist
+## 21. Production Checklist
 
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`
 - [ ] Config, route, and event caches built (`config:cache`, `route:cache`, `event:cache`)
@@ -328,19 +346,19 @@ tests/
 - [ ] `CORS_ALLOWED_ORIGINS` restricted to actual frontend origins
 - [ ] Default seeded admin PIN (`123456`) changed
 - [ ] FCM configured with a real project (or explicitly accepted as log-only)
-- [ ] Real SMS provider wired for OTP delivery (§14) — **do not ship to production relying on `debug_otp`**, which is already disabled outside `local`/`testing` but confirm your `APP_ENV` is correct
+- [ ] Real SMS provider wired for OTP delivery (§15) — **do not ship to production relying on `debug_otp`**, which is already disabled outside `local`/`testing` but confirm your `APP_ENV` is correct
 - [ ] `.env` file permissions locked down (not web-readable, not committed to git)
 - [ ] HTTPS enforced at the load balancer / web server
-- [ ] Database backups scheduled (§22)
-- [ ] Log rotation configured (§23)
+- [ ] Database backups scheduled (§23)
+- [ ] Log rotation configured (§24)
 
 ---
 
-## 21. Security Checklist
+## 22. Security Checklist
 
 - [x] Passwords/PINs never stored in plaintext — PIN uses Laravel's `hashed` cast (bcrypt)
 - [x] Bank account numbers and virtual card numbers stored **encrypted** (`Crypt::encryptString`, backed by `APP_KEY`) — never returned in full via the API, only masked
-- [x] KYC documents (passport/selfie) stored on the **private** disk, never public
+- [x] KYC documents (passport/citizen ID/selfie) stored as **private** (`type: authenticated`) Cloudinary assets, never public
 - [x] All mutating endpoints behind Sanctum token auth; sensitive actions additionally require the transaction PIN
 - [x] Rate limiting on auth/OTP endpoints to slow brute-force and OTP-spam
 - [x] Ownership checked both in the service layer and via Laravel Policies (defense in depth) for bank accounts, devices, and scratch cards
@@ -352,15 +370,15 @@ tests/
 
 ---
 
-## 22. Backup Strategy
+## 23. Backup Strategy
 
 - **Database:** schedule `mysqldump` (or your managed DB provider's automated backups) at least daily, with point-in-time recovery (binlog) enabled given this is financial ledger data. Test restores periodically — an untested backup is not a backup.
-- **Storage (`storage/app/private`):** back up KYC documents alongside the database; they're referenced by path from `identity_verifications`, so losing one without the other breaks the audit trail.
+- **KYC documents:** live on Cloudinary, not local disk — back up your Cloudinary account per its own retention settings; `identity_verifications` stores only the `public_id` reference, so losing the Cloudinary account without a separate backup breaks the audit trail.
 - **`.env`:** keep a secure, access-controlled copy outside the deploy pipeline (secrets manager, vault) — never in version control.
 
 ---
 
-## 23. Logging Strategy
+## 24. Logging Strategy
 
 - Default channel is `stack` → `single` file (`storage/logs/laravel.log`). For production, consider switching to `daily` (in `config/logging.php`, set `LOG_CHANNEL=daily`) so logs rotate automatically, and/or shipping to an external aggregator (Papertrail, CloudWatch, ELK) for durability and searchability across server restarts.
 - Business-relevant events already logged: OTP generation (`OtpService`), FCM send attempts/failures (`FcmService`).
@@ -368,7 +386,7 @@ tests/
 
 ---
 
-## 24. Performance Optimization
+## 25. Performance Optimization
 
 - Run `php artisan config:cache`, `route:cache`, `event:cache` in production (skip these in local dev — they make `.env`/route changes invisible until cleared).
 - Add composite indexes as query patterns emerge; the migrations already index the hot paths: `wallet_transactions(wallet_id, created_at)`, `transfers(sender_user_id, created_at)`/`(receiver_user_id, created_at)`, `otps(phone, purpose)`, etc.
@@ -378,7 +396,7 @@ tests/
 
 ---
 
-## 25. Common Errors & Fixes
+## 26. Common Errors & Fixes
 
 These are real issues hit while building this project — kept here so you don't have to rediscover them.
 

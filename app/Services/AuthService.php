@@ -20,7 +20,7 @@ class AuthService
     ) {
     }
 
-    public function register(string $name, string $phone, ?string $ip = null): array
+    public function register(string $name, string $phone, string $nationality, ?string $ip = null): array
     {
         $user = $this->users->findByPhone($phone);
 
@@ -32,11 +32,12 @@ class AuthService
             $user = $this->users->create([
                 'name' => $name,
                 'phone' => $phone,
+                'nationality' => $nationality,
                 'upi_handle' => $this->users->generateUniqueUpiHandle($phone),
                 'status' => UserStatus::Active->value,
             ]);
         } else {
-            $user->update(['name' => $name]);
+            $user->update(['name' => $name, 'nationality' => $nationality]);
         }
 
         $otp = $this->otpService->generate($phone, OtpPurpose::Registration, $ip);
@@ -115,6 +116,11 @@ class AuthService
         }
 
         return $this->pinService->forceSetPin($user, $newPin);
+    }
+
+    public function updateNationality(User $user, string $nationality): User
+    {
+        return $this->users->update($user, ['nationality' => $nationality]);
     }
 
     public function logout(User $user): void

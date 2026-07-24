@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentType;
 use App\Enums\VerificationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,9 +11,10 @@ class IdentityVerification extends Model
 {
     protected $fillable = [
         'user_id',
-        'passport_number',
-        'passport_expiry',
-        'passport_image_path',
+        'document_type',
+        'document_number',
+        'document_expiry',
+        'document_image_path',
         'selfie_image_path',
         'status',
         'rejection_reason',
@@ -23,7 +25,8 @@ class IdentityVerification extends Model
     protected function casts(): array
     {
         return [
-            'passport_expiry' => 'date',
+            'document_type' => DocumentType::class,
+            'document_expiry' => 'date',
             'status' => VerificationStatus::class,
             'reviewed_at' => 'datetime',
         ];

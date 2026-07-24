@@ -22,7 +22,7 @@ class AdminUserService
 
     public function find(int $id): User
     {
-        return $this->users->findOrFail($id);
+        return $this->users->findWithVerification($id);
     }
 
     public function updateStatus(User $user, UserStatus $status): User

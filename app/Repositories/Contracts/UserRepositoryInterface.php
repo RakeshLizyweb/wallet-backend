@@ -13,6 +13,8 @@ interface UserRepositoryInterface extends BaseRepositoryInterface
 
     public function findByUsername(string $username): ?User;
 
+    public function findWithVerification(int $id): User;
+
     public function generateUniqueUpiHandle(string $phone): string;
 
     public function paginateAll(array $filters, int $perPage = 20): LengthAwarePaginator;

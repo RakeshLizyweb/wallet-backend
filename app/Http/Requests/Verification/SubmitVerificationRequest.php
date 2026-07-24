@@ -17,9 +17,9 @@ class SubmitVerificationRequest extends FormRequest
         $minExpiry = now()->addMonths($bufferMonths)->toDateString();
 
         return [
-            'passport_number' => ['required', 'string', 'max:20'],
-            'passport_expiry' => ['required', 'date', 'after:'.$minExpiry],
-            'passport_image' => ['required', 'image', 'max:5120'],
+            'document_number' => ['required', 'string', 'max:20'],
+            'document_expiry' => ['required', 'date', 'after:'.$minExpiry],
+            'document_image' => ['required', 'image', 'max:5120'],
             'selfie_image' => ['required', 'image', 'max:5120'],
         ];
     }

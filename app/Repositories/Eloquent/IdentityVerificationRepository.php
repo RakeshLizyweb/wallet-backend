@@ -27,7 +27,7 @@ class IdentityVerificationRepository extends BaseRepository implements IdentityV
 
     public function paginateAll(array $filters, int $perPage = 20): LengthAwarePaginator
     {
-        $query = $this->model->newQuery()->with('user:id,name,phone,upi_handle');
+        $query = $this->model->newQuery()->with('user:id,name,phone,upi_handle,nationality');
 
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);

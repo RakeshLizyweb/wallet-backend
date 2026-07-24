@@ -42,9 +42,14 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         return $handle;
     }
 
+    public function findWithVerification(int $id): User
+    {
+        return $this->model->newQuery()->with('latestIdentityVerification')->findOrFail($id);
+    }
+
     public function paginateAll(array $filters, int $perPage = 20): LengthAwarePaginator
     {
-        $query = $this->model->newQuery();
+        $query = $this->model->newQuery()->with('latestIdentityVerification');
 
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);

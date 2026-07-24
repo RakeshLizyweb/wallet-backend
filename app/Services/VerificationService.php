@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DocumentType;
 use App\Enums\UserTier;
 use App\Enums\VerificationStatus;
 use App\Exceptions\ApiException;
@@ -19,10 +20,11 @@ class VerificationService
         protected IdentityVerificationRepositoryInterface $verifications,
         protected VirtualCardService $virtualCardService,
         protected NotificationService $notificationService,
+        protected CloudinaryService $cloudinary,
     ) {
     }
 
-    public function submit(User $user, array $data, UploadedFile $passportImage, UploadedFile $selfieImage): IdentityVerification
+    public function submit(User $user, array $data, UploadedFile $documentImage, UploadedFile $selfieImage): IdentityVerification
     {
         $latest = $this->verifications->latestForUser($user);
 
@@ -34,17 +36,31 @@ class VerificationService
             throw new ApiException('Your previous verification request is still pending review.', 422);
         }
 
-        $passportPath = $passportImage->store("verifications/{$user->id}", 'local');
-        $selfiePath = $selfieImage->store("verifications/{$user->id}", 'local');
+        $folder = "verifications/{$user->id}";
+        $documentPublicId = $this->cloudinary->uploadPrivateImage($documentImage, $folder);
+        $selfiePublicId = $this->cloudinary->uploadPrivateImage($selfieImage, $folder);
 
         return $this->verifications->create([
             'user_id' => $user->id,
-            'passport_number' => $data['passport_number'],
-            'passport_expiry' => $data['passport_expiry'],
-            'passport_image_path' => $passportPath,
-            'selfie_image_path' => $selfiePath,
+            'document_type' => $this->documentTypeFor($user)->value,
+            'document_number' => $data['document_number'],
+            'document_expiry' => $data['document_expiry'],
+            'document_image_path' => $documentPublicId,
+            'selfie_image_path' => $selfiePublicId,
             'status' => VerificationStatus::Pending->value,
         ]);
+    }
+
+    /**
+     * Ivory Coast nationals verify with their national citizen ID; everyone
+     * else verifies with a passport. Decided server-side from the user's
+     * stored nationality, not from client input, so it can't be spoofed.
+     */
+    public function documentTypeFor(User $user): DocumentType
+    {
+        return strcasecmp(trim((string) $user->nationality), 'Ivory Coast') === 0
+            ? DocumentType::CitizenId
+            : DocumentType::Passport;
     }
 
     public function latestForUser(User $user): ?IdentityVerification
