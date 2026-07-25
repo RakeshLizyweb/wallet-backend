@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankAccountController;
 use App\Http\Controllers\Api\V1\DeviceController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Api\V1\QrCodeController;
 use App\Http\Controllers\Api\V1\RewardController;
 use App\Http\Controllers\Api\V1\TransferController;
 use App\Http\Controllers\Api\V1\VerificationController;
+use App\Http\Controllers\Api\V1\UserSearchController;
 use App\Http\Controllers\Api\V1\VirtualCardController;
 use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +59,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('statement/full', [WalletController::class, 'fullStatement'])->name('statement.full');
     });
 
+    Route::prefix('account')->name('account.')->group(function () {
+        Route::get('/', [AccountController::class, 'show'])->middleware('pin')->name('show');
+        Route::get('statement/mini', [AccountController::class, 'miniStatement'])->name('statement.mini');
+        Route::get('statement/full', [AccountController::class, 'fullStatement'])->name('statement.full');
+    });
+
+    Route::get('users/search', [UserSearchController::class, 'search'])->name('users.search');
+
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [BankAccountController::class, 'index'])->name('index');
         Route::post('/', [BankAccountController::class, 'store'])->name('store');
@@ -72,6 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('wallet-to-wallet', [TransferController::class, 'walletToWallet'])->name('wallet-to-wallet');
         Route::post('wallet-to-bank', [TransferController::class, 'walletToBank'])->name('wallet-to-bank');
         Route::post('bank-to-wallet', [TransferController::class, 'bankToWallet'])->name('bank-to-wallet');
+        Route::post('account-to-account', [TransferController::class, 'accountToAccount'])->name('account-to-account');
+        Route::post('account-to-wallet', [TransferController::class, 'accountToWallet'])->name('account-to-wallet');
         Route::get('{reference}', [TransferController::class, 'show'])->name('show');
     });
 

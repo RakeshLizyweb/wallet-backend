@@ -43,6 +43,7 @@ class WalletRepository extends BaseRepository implements WalletRepositoryInterfa
         $query = $this->model->newQuery()->with([
             'user:id,name,phone,upi_handle,nationality',
             'user.latestIdentityVerification',
+            'user.account',
         ]);
 
         if (! empty($filters['status'])) {
@@ -51,7 +52,10 @@ class WalletRepository extends BaseRepository implements WalletRepositoryInterfa
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where('wallet_number', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('wallet_number', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($u) => $u->where('phone', 'like', "%{$search}%"));
+            });
         }
 
         return $query->latest('id')->paginate($perPage);

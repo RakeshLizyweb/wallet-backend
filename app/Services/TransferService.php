@@ -23,6 +23,7 @@ class TransferService
         protected UserRepositoryInterface $users,
         protected WalletRepositoryInterface $wallets,
         protected WalletService $walletService,
+        protected AccountService $accountService,
         protected PinService $pinService,
         protected LimitService $limitService,
     ) {
@@ -45,6 +46,12 @@ class TransferService
         return $user;
     }
 
+    /**
+     * The sender pays from their Wallet, but the receiving side always lands
+     * in the receiver's Account, never their Wallet — Account is the single
+     * inbox every incoming payment (or admin credit) lands in; Wallet is a
+     * spending pocket each user tops up for themselves via accountToWallet().
+     */
     public function walletToWallet(User $sender, string $receiverIdentifier, float $amount, string $pin, ?string $senderNote = null): Transfer
     {
         $this->pinService->verifyPin($sender, $pin);
@@ -58,35 +65,142 @@ class TransferService
         $this->limitService->assertWithinLimits($sender, $amount);
 
         $senderWallet = $this->walletService->getForUser($sender);
-        $receiverWallet = $this->walletService->getForUser($receiver);
+        $receiverAccount = $this->accountService->getForUser($receiver);
 
+        // Sender pays exactly what they typed; the 1% platform fee is
+        // deducted from what the recipient receives, not added on top.
         $fee = round($amount * config('wallet.fees.wallet_to_wallet', 0), 2);
-        $total = round($amount + $fee, 2);
+        $receiveAmount = round($amount - $fee, 2);
         $reference = $this->walletService->generateReferenceNumber();
 
-        return DB::transaction(function () use ($sender, $receiver, $senderWallet, $receiverWallet, $amount, $fee, $total, $reference, $senderNote) {
+        return DB::transaction(function () use ($sender, $receiver, $senderWallet, $receiverAccount, $amount, $fee, $receiveAmount, $reference, $senderNote) {
             $transfer = $this->transfers->create([
                 'reference_number' => $reference,
                 'type' => TransferType::WalletToWallet->value,
                 'sender_user_id' => $sender->id,
                 'receiver_user_id' => $receiver->id,
                 'sender_wallet_id' => $senderWallet->id,
-                'receiver_wallet_id' => $receiverWallet->id,
+                'receiver_account_id' => $receiverAccount->id,
                 'amount' => $amount,
                 'fee' => $fee,
-                'total_amount' => $total,
+                'total_amount' => $amount,
                 'status' => TransferStatus::Pending->value,
                 'sender_note' => $senderNote,
             ]);
 
             $this->walletService->debit(
-                $senderWallet, $total, LedgerCategory::WalletToWallet, $reference, $transfer,
+                $senderWallet, $amount, LedgerCategory::WalletToWallet, $reference, $transfer,
                 "Sent to {$receiver->upi_handle}"
             );
 
-            $this->walletService->credit(
-                $receiverWallet, $amount, LedgerCategory::WalletToWallet, $reference, $transfer,
+            $this->accountService->credit(
+                $receiverAccount, $receiveAmount, LedgerCategory::WalletToWallet, $reference, $transfer,
                 "Received from {$sender->upi_handle}"
+            );
+
+            $transfer->update(['status' => TransferStatus::Success->value, 'completed_at' => now()]);
+
+            TransferCompleted::dispatch($transfer->fresh());
+
+            return $transfer->fresh();
+        });
+    }
+
+    public function accountToAccount(User $sender, string $receiverIdentifier, float $amount, string $pin, ?string $senderNote = null): Transfer
+    {
+        $this->pinService->verifyPin($sender, $pin);
+
+        $receiver = $this->resolveReceiver($receiverIdentifier);
+
+        if ($receiver->id === $sender->id) {
+            throw new ApiException('You cannot send money to yourself.', 422);
+        }
+
+        $this->limitService->assertWithinLimits($sender, $amount);
+
+        $senderAccount = $this->accountService->getForUser($sender);
+        $receiverAccount = $this->accountService->getForUser($receiver);
+
+        // Sender pays exactly what they typed; the 1% platform fee is
+        // deducted from what the recipient receives, not added on top.
+        $fee = round($amount * config('wallet.fees.account_to_account', 0), 2);
+        $receiveAmount = round($amount - $fee, 2);
+        $reference = $this->walletService->generateReferenceNumber();
+
+        return DB::transaction(function () use ($sender, $receiver, $senderAccount, $receiverAccount, $amount, $fee, $receiveAmount, $reference, $senderNote) {
+            $transfer = $this->transfers->create([
+                'reference_number' => $reference,
+                'type' => TransferType::AccountToAccount->value,
+                'sender_user_id' => $sender->id,
+                'receiver_user_id' => $receiver->id,
+                'sender_account_id' => $senderAccount->id,
+                'receiver_account_id' => $receiverAccount->id,
+                'amount' => $amount,
+                'fee' => $fee,
+                'total_amount' => $amount,
+                'status' => TransferStatus::Pending->value,
+                'sender_note' => $senderNote,
+            ]);
+
+            $this->accountService->debit(
+                $senderAccount, $amount, LedgerCategory::AccountToAccount, $reference, $transfer,
+                "Sent to {$receiver->upi_handle}"
+            );
+
+            $this->accountService->credit(
+                $receiverAccount, $receiveAmount, LedgerCategory::AccountToAccount, $reference, $transfer,
+                "Received from {$sender->upi_handle}"
+            );
+
+            $transfer->update(['status' => TransferStatus::Success->value, 'completed_at' => now()]);
+
+            TransferCompleted::dispatch($transfer->fresh());
+
+            return $transfer->fresh();
+        });
+    }
+
+    /**
+     * Moves money from the user's own Account into their own Wallet. Always a
+     * self-transfer (sender and receiver are the same user), so it isn't
+     * subject to the monthly outbound transfer limit — the
+     * money never leaves the user's custody, just relocates between their
+     * two in-app balances.
+     */
+    public function accountToWallet(User $user, float $amount, string $pin, ?string $note = null): Transfer
+    {
+        $this->pinService->verifyPin($user, $pin);
+
+        $account = $this->accountService->getForUser($user);
+        $wallet = $this->walletService->getForUser($user);
+
+        $fee = round($amount * config('wallet.fees.account_to_wallet', 0), 2);
+        $total = round($amount + $fee, 2);
+        $reference = $this->walletService->generateReferenceNumber();
+
+        return DB::transaction(function () use ($user, $account, $wallet, $amount, $fee, $total, $reference, $note) {
+            $transfer = $this->transfers->create([
+                'reference_number' => $reference,
+                'type' => TransferType::AccountToWallet->value,
+                'sender_user_id' => $user->id,
+                'receiver_user_id' => $user->id,
+                'sender_account_id' => $account->id,
+                'receiver_wallet_id' => $wallet->id,
+                'amount' => $amount,
+                'fee' => $fee,
+                'total_amount' => $total,
+                'status' => TransferStatus::Pending->value,
+                'sender_note' => $note,
+            ]);
+
+            $this->accountService->debit(
+                $account, $total, LedgerCategory::AccountToWallet, $reference, $transfer,
+                'Moved to wallet'
+            );
+
+            $this->walletService->credit(
+                $wallet, $amount, LedgerCategory::AccountToWallet, $reference, $transfer,
+                'Moved from account'
             );
 
             $transfer->update(['status' => TransferStatus::Success->value, 'completed_at' => now()]);
@@ -198,8 +312,9 @@ class TransferService
                     $reference, $transfer, "Reversal: {$reason}"
                 );
 
-                $this->walletService->debit(
-                    $transfer->receiverWallet, (float) $transfer->amount, LedgerCategory::Reversal,
+                // The receiver only ever got amount minus the platform fee.
+                $this->accountService->debit(
+                    $transfer->receiverAccount, (float) $transfer->amount - (float) $transfer->fee, LedgerCategory::Reversal,
                     $reference, $transfer, "Reversal: {$reason}"
                 );
             } elseif ($transfer->type === TransferType::WalletToBank) {
@@ -208,6 +323,27 @@ class TransferService
                     $reference, $transfer, "Reversal: {$reason}"
                 );
             } elseif ($transfer->type === TransferType::BankToWallet) {
+                $this->walletService->debit(
+                    $transfer->receiverWallet, (float) $transfer->amount, LedgerCategory::Reversal,
+                    $reference, $transfer, "Reversal: {$reason}"
+                );
+            } elseif ($transfer->type === TransferType::AccountToAccount) {
+                $this->accountService->credit(
+                    $transfer->senderAccount, (float) $transfer->total_amount, LedgerCategory::Reversal,
+                    $reference, $transfer, "Reversal: {$reason}"
+                );
+
+                // The receiver only ever got amount minus the platform fee.
+                $this->accountService->debit(
+                    $transfer->receiverAccount, (float) $transfer->amount - (float) $transfer->fee, LedgerCategory::Reversal,
+                    $reference, $transfer, "Reversal: {$reason}"
+                );
+            } elseif ($transfer->type === TransferType::AccountToWallet) {
+                $this->accountService->credit(
+                    $transfer->senderAccount, (float) $transfer->total_amount, LedgerCategory::Reversal,
+                    $reference, $transfer, "Reversal: {$reason}"
+                );
+
                 $this->walletService->debit(
                     $transfer->receiverWallet, (float) $transfer->amount, LedgerCategory::Reversal,
                     $reference, $transfer, "Reversal: {$reason}"

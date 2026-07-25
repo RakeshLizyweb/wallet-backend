@@ -27,7 +27,7 @@ class VerificationController extends Controller
     {
         return $this->success(
             AdminVerificationResource::collection($this->verificationService->paginateAll(
-                $request->only(['status']),
+                $request->only(['status', 'search']),
                 (int) $request->input('per_page', 20)
             ))
         );

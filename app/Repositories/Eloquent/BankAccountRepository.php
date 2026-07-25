@@ -51,6 +51,11 @@ class BankAccountRepository extends BaseRepository implements BankAccountReposit
             $query->where('is_verified', $filters['is_verified']);
         }
 
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->whereHas('user', fn ($u) => $u->where('phone', 'like', "%{$search}%"));
+        }
+
         return $query->latest('id')->paginate($perPage);
     }
 }

@@ -74,5 +74,13 @@ class TransferRepository extends BaseRepository implements TransferRepositoryInt
         if (! empty($filters['to'])) {
             $query->whereDate('created_at', '<=', $filters['to']);
         }
+
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function (Builder $q) use ($search) {
+                $q->whereHas('senderUser', fn ($u) => $u->where('phone', 'like', "%{$search}%"))
+                    ->orWhereHas('receiverUser', fn ($u) => $u->where('phone', 'like', "%{$search}%"));
+            });
+        }
     }
 }

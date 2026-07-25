@@ -16,6 +16,8 @@ class Transfer extends Model
         'receiver_user_id',
         'sender_wallet_id',
         'receiver_wallet_id',
+        'sender_account_id',
+        'receiver_account_id',
         'bank_account_id',
         'amount',
         'fee',
@@ -57,6 +59,16 @@ class Transfer extends Model
     public function receiverWallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class, 'receiver_wallet_id');
+    }
+
+    public function senderAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'sender_account_id');
+    }
+
+    public function receiverAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'receiver_account_id');
     }
 
     public function bankAccount(): BelongsTo

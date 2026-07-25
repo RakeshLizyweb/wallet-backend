@@ -7,6 +7,7 @@ use App\Observers\UserObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +25,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Some MySQL/MariaDB builds (older InnoDB row format defaults, common
+        // on XAMPP-bundled MariaDB) cap index keys at ~767-1000 bytes. A
+        // utf8mb4 VARCHAR(255) unique index exceeds that, so migrations fail
+        // with "Specified key was too long" on those servers even though the
+        // exact same migrations work fine elsewhere. Capping the default
+        // string length keeps unique/indexed varchar columns safely under
+        // that limit regardless of the server's row format.
+        Schema::defaultStringLength(191);
+
         User::observe(UserObserver::class);
 
         RateLimiter::for('api', function (Request $request) {

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\WalletAdjustRequest;
 use App\Http\Resources\WalletResource;
 use App\Models\Wallet;
+use App\Services\AccountService;
 use App\Services\WalletService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -17,8 +18,10 @@ class WalletController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(protected WalletService $walletService)
-    {
+    public function __construct(
+        protected WalletService $walletService,
+        protected AccountService $accountService,
+    ) {
     }
 
     public function index(Request $request): JsonResponse
@@ -43,8 +46,15 @@ class WalletController extends Controller
 
     public function adjust(WalletAdjustRequest $request, Wallet $wallet): JsonResponse
     {
-        $this->walletService->adjust($wallet, (float) $request->amount, LedgerType::from($request->type), $request->reason);
+        $bucket = $request->input('bucket', 'account');
 
-        return $this->success(new WalletResource($wallet->fresh()), 'Wallet adjusted.');
+        if ($bucket === 'wallet') {
+            $this->walletService->adjust($wallet, (float) $request->amount, LedgerType::from($request->type), $request->reason);
+        } else {
+            $account = $this->accountService->getForUser($wallet->user);
+            $this->accountService->adjust($account, (float) $request->amount, LedgerType::from($request->type), $request->reason);
+        }
+
+        return $this->success(new WalletResource($wallet->fresh()->load('user.account')), 'Balance adjusted.');
     }
 }

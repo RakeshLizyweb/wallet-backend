@@ -22,7 +22,7 @@ class TransactionController extends Controller
     {
         return $this->success(
             AdminTransferResource::collection($this->transferService->paginateAll(
-                $request->only(['type', 'status', 'from', 'to']),
+                $request->only(['type', 'status', 'from', 'to', 'search']),
                 (int) $request->input('per_page', 20)
             ))
         );

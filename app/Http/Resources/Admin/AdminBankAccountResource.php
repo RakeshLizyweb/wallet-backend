@@ -14,6 +14,7 @@ class AdminBankAccountResource extends JsonResource
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
+                'phone' => $this->user->phone,
                 'upi_handle' => $this->user->upi_handle,
             ],
             'bank_name' => $this->bank_name,

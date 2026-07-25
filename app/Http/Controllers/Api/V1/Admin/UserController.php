@@ -28,7 +28,7 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['status', 'tier', 'search']);
+        $filters = $request->only(['status', 'tier', 'nationality', 'search']);
 
         return $this->success(
             UserResource::collection($this->adminUserService->paginate($filters, (int) $request->input('per_page', 20)))

@@ -32,13 +32,13 @@ class LimitServiceTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    public function test_exceeding_daily_limit_throws(): void
+    public function test_exceeding_monthly_limit_throws(): void
     {
         $user = User::factory()->create(['tier' => 'basic']);
 
         $this->expectException(ApiException::class);
 
-        app(LimitService::class)->assertWithinLimits($user, config('wallet.limits.basic.daily') + 1);
+        app(LimitService::class)->assertWithinLimits($user, config('wallet.limits.basic.monthly') + 1);
     }
 
     public function test_usage_accumulates_across_transfers(): void
@@ -54,6 +54,6 @@ class LimitServiceTest extends TestCase
 
         $usage = app(LimitService::class)->usageFor($sender);
 
-        $this->assertEquals(1000, $usage['daily']);
+        $this->assertEquals(1000, $usage['monthly']);
     }
 }

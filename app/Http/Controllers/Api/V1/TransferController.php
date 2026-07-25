@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Transaction\AccountToAccountRequest;
+use App\Http\Requests\Transaction\AccountToWalletRequest;
 use App\Http\Requests\Transaction\BankToWalletRequest;
 use App\Http\Requests\Transaction\TransferHistoryRequest;
 use App\Http\Requests\Transaction\WalletToBankRequest;
@@ -33,6 +35,31 @@ class TransferController extends Controller
         );
 
         return $this->success(new TransferResource($transfer), 'Money sent successfully.', 201);
+    }
+
+    public function accountToAccount(AccountToAccountRequest $request): JsonResponse
+    {
+        $transfer = $this->transferService->accountToAccount(
+            $request->user(),
+            $request->receiver,
+            (float) $request->amount,
+            $request->pin,
+            $request->input('note')
+        );
+
+        return $this->success(new TransferResource($transfer), 'Money sent successfully.', 201);
+    }
+
+    public function accountToWallet(AccountToWalletRequest $request): JsonResponse
+    {
+        $transfer = $this->transferService->accountToWallet(
+            $request->user(),
+            (float) $request->amount,
+            $request->pin,
+            $request->input('note')
+        );
+
+        return $this->success(new TransferResource($transfer), 'Moved to wallet successfully.', 201);
     }
 
     public function walletToBank(WalletToBankRequest $request): JsonResponse

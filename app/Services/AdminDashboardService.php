@@ -32,6 +32,11 @@ class AdminDashboardService
                 'total_count' => Transfer::count(),
                 'pending' => Transfer::where('status', 'pending')->count(),
             ],
+            'fees' => [
+                'today' => (float) Transfer::whereDate('created_at', now()->toDateString())
+                    ->where('status', 'success')->sum('fee'),
+                'total' => (float) Transfer::where('status', 'success')->sum('fee'),
+            ],
             'verifications' => [
                 'pending' => IdentityVerification::where('status', 'pending')->count(),
                 'approved' => IdentityVerification::where('status', 'approved')->count(),

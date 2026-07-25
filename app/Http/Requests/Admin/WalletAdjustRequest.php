@@ -16,6 +16,7 @@ class WalletAdjustRequest extends FormRequest
     {
         return [
             'type' => ['required', Rule::in(['credit', 'debit'])],
+            'bucket' => ['sometimes', Rule::in(['account', 'wallet'])],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'reason' => ['required', 'string', 'max:255'],
         ];
