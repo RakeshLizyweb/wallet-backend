@@ -24,6 +24,10 @@ class BankAccountController extends Controller
             ? ['is_verified' => $request->boolean('is_verified')]
             : [];
 
+        if ($request->filled('search')) {
+            $filters['search'] = $request->input('search');
+        }
+
         return $this->success(
             AdminBankAccountResource::collection($this->bankAccountService->paginateAll(
                 $filters,

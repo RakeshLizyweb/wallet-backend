@@ -59,6 +59,10 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
             $query->where('tier', $filters['tier']);
         }
 
+        if (! empty($filters['nationality'])) {
+            $query->where('nationality', $filters['nationality']);
+        }
+
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {

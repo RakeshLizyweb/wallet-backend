@@ -11,13 +11,17 @@ class TransferResource extends JsonResource
     {
         $userId = $request->user()?->id;
 
-        // wallet_to_bank and bank_to_wallet are always self-transfers (sender_user_id
-        // is the acting user on both), so direction must be derived from the transfer
-        // type rather than from sender/receiver comparison, which only distinguishes
-        // parties for wallet_to_wallet transfers.
+        // wallet_to_bank, bank_to_wallet, and account_to_wallet are always
+        // self-transfers (sender_user_id is the acting user on both sides), so
+        // direction must be derived from the transfer type rather than from
+        // sender/receiver comparison, which only distinguishes parties for
+        // wallet_to_wallet/account_to_account transfers. account_to_wallet gets
+        // its own 'internal' direction (not credit/debit) since it's a self
+        // top-up, not money actually leaving or entering the user's custody.
         $direction = match ($this->type?->value) {
             'bank_to_wallet' => 'credit',
             'wallet_to_bank' => 'debit',
+            'account_to_wallet' => 'internal',
             default => $this->sender_user_id === $userId ? 'debit' : 'credit',
         };
 
@@ -29,7 +33,7 @@ class TransferResource extends JsonResource
             'amount' => (float) $this->amount,
             'fee' => (float) $this->fee,
             'total_amount' => (float) $this->total_amount,
-            'counterparty' => $this->when($this->type?->value === 'wallet_to_wallet', function () use ($direction) {
+            'counterparty' => $this->when(in_array($this->type?->value, ['wallet_to_wallet', 'account_to_account'], true), function () use ($direction) {
                 $counterparty = $direction === 'debit' ? $this->receiverUser : $this->senderUser;
 
                 return $counterparty ? [

@@ -246,10 +246,10 @@ If the deleted account was primary, the next-oldest account is auto-promoted.
 
 ### Get usage vs. limits — `GET /limits` 🔑 auth
 ```json
-{ "data": { "daily": 1200, "monthly": 1200, "yearly": 1200,
-  "limits": { "daily": 25000, "monthly": 150000, "yearly": 1000000 } } }
+{ "data": { "monthly": 1200,
+  "limits": { "monthly": 150000 } } }
 ```
-Limits are tier-based (`basic` / `verified` / `premium`, premium = unlimited) and configurable via `.env` (`LIMIT_*` keys). Only outgoing transfers (`wallet_to_wallet`, `wallet_to_bank`) count against usage.
+There is only a monthly cap (no daily or yearly limits). Limits are tier-based (`basic` / `verified` / `premium`, premium = unlimited) and configurable via `.env` (`LIMIT_*` keys). Only outbound spending counts against usage — `wallet_to_wallet`, `wallet_to_bank`, and `account_to_account` — not `account_to_wallet`, since that's a self-move between a user's own two balances and the money never leaves their custody.
 
 ---
 
@@ -267,7 +267,7 @@ All transfer endpoints are rate-limited (`sensitive`) and produce a `Transfer` w
 | pin | required, 6 digits |
 | note | optional, string, max 255 |
 
-Rejects: sending to self, insufficient balance, limit exceeded.
+A 1% platform fee (`FEE_WALLET_TO_WALLET`) is deducted from what the recipient receives — the sender's wallet is debited exactly `amount`, and the receiver's Account is credited `amount - fee`. Same mechanic for `POST /transfers/account-to-account` (`FEE_ACCOUNT_TO_ACCOUNT`). Rejects: sending to self, insufficient balance, limit exceeded.
 
 ### Wallet → Bank (Withdraw) — `POST /transfers/wallet-to-bank` 🔑 auth 🔒 PIN in body
 **Body:** `bank_account_id` (required, must belong to user and be verified), `amount`, `pin`, `note`.
@@ -289,7 +289,7 @@ Only visible to sender or receiver.
   "type": "wallet_to_wallet",
   "direction": "debit",
   "status": "success",
-  "amount": 150.00, "fee": 0, "total_amount": 150.00,
+  "amount": 150.00, "fee": 1.50, "total_amount": 150.00,
   "counterparty": { "name": "Bob", "upi_handle": "9000000002@wallet" },
   "sender_note": null, "receiver_note": null, "failure_reason": null,
   "completed_at": "...", "created_at": "..."

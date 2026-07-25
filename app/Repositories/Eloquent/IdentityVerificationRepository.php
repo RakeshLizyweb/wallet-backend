@@ -33,6 +33,11 @@ class IdentityVerificationRepository extends BaseRepository implements IdentityV
             $query->where('status', $filters['status']);
         }
 
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->whereHas('user', fn ($u) => $u->where('phone', 'like', "%{$search}%"));
+        }
+
         return $query->latest('id')->paginate($perPage);
     }
 }

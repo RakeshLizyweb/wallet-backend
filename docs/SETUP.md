@@ -265,8 +265,9 @@ Endpoints are grouped into folders matching this document's sections (Auth, Devi
 | `OTP_LENGTH` / `OTP_EXPIRY_MINUTES` / `OTP_MAX_ATTEMPTS` / `OTP_RESEND_COOLDOWN_SECONDS` | OTP behavior | 6 / 5 / 5 / 60 |
 | `PIN_LENGTH` / `PIN_MAX_ATTEMPTS` / `PIN_LOCKOUT_MINUTES` | PIN behavior | 6 / 5 / 15 |
 | `WALLET_QR_DOMAIN` | suffix used for generated UPI-style handles (`phone@domain`) | `wallet` |
-| `LIMIT_BASIC_*` / `LIMIT_VERIFIED_*` | daily/monthly/yearly transfer limits per tier (`premium` is always unlimited) | see `.env.example` |
-| `FEE_WALLET_TO_WALLET` / `FEE_WALLET_TO_BANK` / `FEE_BANK_TO_WALLET` | fee rate (fraction of amount) per transfer type | 0 / 0.005 / 0 |
+| `LIMIT_BASIC_MONTHLY` / `LIMIT_VERIFIED_MONTHLY` | monthly transfer limit per tier — the only period tracked (`premium` is always unlimited) | see `.env.example` |
+| `FEE_WALLET_TO_WALLET` / `FEE_ACCOUNT_TO_ACCOUNT` | platform fee for peer payments — deducted from what the recipient receives, not added on top | 0.01 / 0.01 |
+| `FEE_WALLET_TO_BANK` / `FEE_BANK_TO_WALLET` / `FEE_ACCOUNT_TO_WALLET` | fee rate (fraction of amount) for withdrawals/deposits/self-moves — added on top of the debited amount where applicable | 0.005 / 0 / 0 |
 | `REWARD_CASHBACK_RATE` / `REWARD_POINTS_PER_TXN` / `REWARD_MIN_TXN_AMOUNT` | scratch-card reward tuning | 0.01 / 10 / 100 |
 | `PASSPORT_EXPIRY_BUFFER_MONTHS` | passport must be valid at least this many months out to be accepted | 6 |
 

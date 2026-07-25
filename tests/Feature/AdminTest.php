@@ -36,7 +36,33 @@ class AdminTest extends TestCase
 
         $this->getJson('/api/v1/admin/dashboard')
             ->assertOk()
-            ->assertJsonStructure(['data' => ['users', 'wallets', 'transactions', 'verifications', 'rewards']]);
+            ->assertJsonStructure(['data' => ['users', 'wallets', 'transactions', 'fees', 'verifications', 'rewards']]);
+    }
+
+    public function test_dashboard_reports_fees_collected_from_successful_transfers_only(): void
+    {
+        $sender = User::factory()->withPin('123456')->create();
+        $receiver = User::factory()->create();
+        app(\App\Services\WalletService::class)->credit($sender->wallet, 1000, \App\Enums\LedgerCategory::Reward);
+
+        Sanctum::actingAs($sender);
+        $reference = $this->postJson('/api/v1/transfers/wallet-to-wallet', [
+            'receiver' => $receiver->phone, 'amount' => 100, 'pin' => '123456',
+        ])->json('data.reference_number');
+
+        $admin = $this->makeAdmin();
+        Sanctum::actingAs($admin);
+
+        $response = $this->getJson('/api/v1/admin/dashboard')->assertOk();
+        $this->assertEquals(1.0, $response->json('data.fees.today'));
+        $this->assertEquals(1.0, $response->json('data.fees.total'));
+
+        // Reversed transfers must not count as collected fee revenue.
+        $this->postJson("/api/v1/admin/transactions/{$reference}/reverse", ['reason' => 'test'])->assertOk();
+
+        $response = $this->getJson('/api/v1/admin/dashboard')->assertOk();
+        $this->assertEquals(0.0, $response->json('data.fees.today'));
+        $this->assertEquals(0.0, $response->json('data.fees.total'));
     }
 
     public function test_admin_can_list_and_update_users(): void
@@ -53,7 +79,26 @@ class AdminTest extends TestCase
             ->assertJsonPath('data.status', 'deactivated');
     }
 
-    public function test_admin_can_adjust_wallet_balance(): void
+    public function test_admin_adjust_defaults_to_crediting_the_account_not_the_wallet(): void
+    {
+        $admin = $this->makeAdmin();
+        $target = User::factory()->create();
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust", [
+            'type' => 'credit',
+            'amount' => 250,
+            'reason' => 'Goodwill credit',
+        ])->assertOk();
+
+        // Wallet balance is untouched...
+        $response->assertJsonPath('data.balance', 0);
+        // ...the credit landed in the user's Account instead.
+        $this->assertEquals(250, $target->account->fresh()->balance);
+    }
+
+    public function test_admin_can_explicitly_adjust_the_wallet_bucket(): void
     {
         $admin = $this->makeAdmin();
         $target = User::factory()->create();
@@ -62,8 +107,11 @@ class AdminTest extends TestCase
 
         $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust", [
             'type' => 'credit',
+            'bucket' => 'wallet',
             'amount' => 250,
             'reason' => 'Goodwill credit',
         ])->assertOk()->assertJsonPath('data.balance', 250);
+
+        $this->assertEquals(0, $target->account->fresh()->balance);
     }
 }

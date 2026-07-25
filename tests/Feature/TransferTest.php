@@ -29,10 +29,20 @@ class TransferTest extends TestCase
             'pin' => '123456',
         ]);
 
-        $response->assertCreated()->assertJsonPath('data.status', 'success');
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'success')
+            ->assertJsonPath('data.fee', 3)
+            ->assertJsonPath('data.amount', 300);
 
+        // Sender pays exactly the amount they typed — the 1% platform fee
+        // comes out of what the receiver gets, not on top of what the
+        // sender pays.
         $this->assertEquals(700, (float) $sender->wallet->fresh()->balance);
-        $this->assertEquals(300, (float) $receiver->wallet->fresh()->balance);
+        // Sender pays from their Wallet, but the receiver always gets it in
+        // their Account — Account is the single inbox for incoming money,
+        // Wallet is a spending pocket each user tops up for themselves.
+        $this->assertEquals(297, (float) $receiver->account->fresh()->balance);
+        $this->assertEquals(0, (float) $receiver->wallet->fresh()->balance);
     }
 
     public function test_cannot_send_money_to_self(): void
@@ -61,16 +71,16 @@ class TransferTest extends TestCase
         ])->assertStatus(422);
     }
 
-    public function test_transfer_exceeding_daily_limit_is_rejected(): void
+    public function test_transfer_exceeding_monthly_limit_is_rejected(): void
     {
         $sender = User::factory()->withPin('123456')->create();
         $receiver = User::factory()->create();
-        app(WalletService::class)->credit($sender->wallet, 100000, LedgerCategory::Reward);
+        app(WalletService::class)->credit($sender->wallet, 200000, LedgerCategory::Reward);
         Sanctum::actingAs($sender);
 
         $response = $this->postJson('/api/v1/transfers/wallet-to-wallet', [
             'receiver' => $receiver->upi_handle,
-            'amount' => 30000, // basic tier daily limit is 25000
+            'amount' => 160000, // basic tier monthly limit is 150000
             'pin' => '123456',
         ]);
 
@@ -140,12 +150,15 @@ class TransferTest extends TestCase
             'pin' => '123456',
         ])->json('data.reference_number');
 
+        // The 200 landed in the receiver's Account (minus the 1% fee), not their Wallet.
+        $this->assertEquals(198, (float) $receiver->account->fresh()->balance);
+
         app(\App\Services\TransferService::class)->reverse(
             app(\App\Services\TransferService::class)->findByReference($reference),
             'test reversal'
         );
 
         $this->assertEquals(1000, (float) $sender->wallet->fresh()->balance);
-        $this->assertEquals(0, (float) $receiver->wallet->fresh()->balance);
+        $this->assertEquals(0, (float) $receiver->account->fresh()->balance);
     }
 }

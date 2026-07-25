@@ -23,26 +23,26 @@ return [
 
     'limits' => [
         'basic' => [
-            'daily' => (float) env('LIMIT_BASIC_DAILY', 25000),
             'monthly' => (float) env('LIMIT_BASIC_MONTHLY', 150000),
-            'yearly' => (float) env('LIMIT_BASIC_YEARLY', 1000000),
         ],
         'verified' => [
-            'daily' => (float) env('LIMIT_VERIFIED_DAILY', 100000),
             'monthly' => (float) env('LIMIT_VERIFIED_MONTHLY', 1000000),
-            'yearly' => (float) env('LIMIT_VERIFIED_YEARLY', 10000000),
         ],
         'premium' => [
-            'daily' => null,
             'monthly' => null,
-            'yearly' => null,
         ],
     ],
 
+    // wallet_to_wallet and account_to_account are peer payments to another
+    // user: the fee is deducted from what the recipient receives (sender
+    // pays exactly the amount they typed). account_to_wallet is a self-move
+    // and wallet_to_bank is a withdrawal — neither carries this platform fee.
     'fees' => [
-        'wallet_to_wallet' => (float) env('FEE_WALLET_TO_WALLET', 0),
+        'wallet_to_wallet' => (float) env('FEE_WALLET_TO_WALLET', 0.01),
         'wallet_to_bank' => (float) env('FEE_WALLET_TO_BANK', 0.005),
         'bank_to_wallet' => (float) env('FEE_BANK_TO_WALLET', 0),
+        'account_to_account' => (float) env('FEE_ACCOUNT_TO_ACCOUNT', 0.01),
+        'account_to_wallet' => (float) env('FEE_ACCOUNT_TO_WALLET', 0),
     ],
 
     'rewards' => [

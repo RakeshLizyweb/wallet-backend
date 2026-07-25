@@ -32,6 +32,14 @@ class SendTransferNotifications
                 'bank_to_wallet',
                 ['reference_number' => $transfer->reference_number]
             ),
+            TransferType::AccountToAccount => $this->notifyAccountToAccount($transfer),
+            TransferType::AccountToWallet => $this->notificationService->send(
+                $transfer->senderUser,
+                'Moved to wallet',
+                "{$transfer->amount} CFA was moved from your account to your wallet.",
+                'account_to_wallet',
+                ['reference_number' => $transfer->reference_number]
+            ),
         };
     }
 
@@ -48,8 +56,27 @@ class SendTransferNotifications
         $this->notificationService->send(
             $transfer->receiverUser,
             'Money received',
-            "{$transfer->amount} CFA received from {$transfer->senderUser->name}.",
+            "{$transfer->amount} CFA received from {$transfer->senderUser->name} into your account.",
             'wallet_to_wallet_received',
+            ['reference_number' => $transfer->reference_number]
+        );
+    }
+
+    protected function notifyAccountToAccount($transfer): void
+    {
+        $this->notificationService->send(
+            $transfer->senderUser,
+            'Money sent',
+            "{$transfer->amount} CFA sent to {$transfer->receiverUser->name} from your account.",
+            'account_to_account_sent',
+            ['reference_number' => $transfer->reference_number]
+        );
+
+        $this->notificationService->send(
+            $transfer->receiverUser,
+            'Money received',
+            "{$transfer->amount} CFA received from {$transfer->senderUser->name} into your account.",
+            'account_to_account_received',
             ['reference_number' => $transfer->reference_number]
         );
     }

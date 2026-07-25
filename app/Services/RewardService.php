@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 
 class RewardService
 {
-    protected const REWARDABLE_TYPES = [TransferType::WalletToWallet, TransferType::WalletToBank];
+    protected const REWARDABLE_TYPES = [TransferType::WalletToWallet, TransferType::WalletToBank, TransferType::AccountToAccount];
 
     public function __construct(
         protected ScratchCardRepositoryInterface $scratchCards,

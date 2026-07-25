@@ -18,6 +18,7 @@ class StatementRequest extends FormRequest
             'type' => ['sometimes', Rule::in(['credit', 'debit'])],
             'category' => ['sometimes', Rule::in([
                 'wallet_to_wallet', 'wallet_to_bank', 'bank_to_wallet',
+                'account_to_account', 'account_to_wallet',
                 'reward', 'refund', 'fee', 'adjustment', 'reversal',
             ])],
             'from' => ['sometimes', 'date'],
