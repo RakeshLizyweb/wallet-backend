@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Enums\UserTier;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AssignRoleRequest;
+use App\Http\Requests\Admin\CreateUserRequest;
 use App\Http\Requests\Admin\SetAdminCredentialsRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
 use App\Http\Requests\Admin\UpdateUserTierRequest;
@@ -38,6 +39,13 @@ class UserController extends Controller
     public function show(int $id): JsonResponse
     {
         return $this->success(new UserResource($this->adminUserService->find($id)));
+    }
+
+    public function store(CreateUserRequest $request): JsonResponse
+    {
+        $user = $this->adminUserService->create($request->name, $request->phone, $request->nationality);
+
+        return $this->success(new UserResource($user), 'User created.', 201);
     }
 
     public function updateStatus(UpdateUserStatusRequest $request, int $id): JsonResponse
