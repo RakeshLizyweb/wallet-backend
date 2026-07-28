@@ -79,6 +79,46 @@ class AdminTest extends TestCase
             ->assertJsonPath('data.status', 'deactivated');
     }
 
+    public function test_admin_can_create_a_user(): void
+    {
+        Sanctum::actingAs($this->makeAdmin());
+
+        $response = $this->postJson('/api/v1/admin/users', [
+            'name' => 'Walk-in Customer',
+            'phone' => '9812345678',
+            'nationality' => 'Ivory Coast',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.name', 'Walk-in Customer')
+            ->assertJsonPath('data.phone', '9812345678')
+            ->assertJsonPath('data.phone_verified', true);
+
+        $user = User::where('phone', '9812345678')->first();
+        $this->assertNotNull($user);
+        $this->assertNotNull($user->wallet);
+        $this->assertNotNull($user->account);
+
+        // Admin-created users are phone-verified immediately, so they can
+        // request a login OTP right away without going through registration.
+        $login = $this->postJson('/api/v1/auth/login', ['phone' => '9812345678']);
+        $login->assertOk();
+    }
+
+    public function test_admin_cannot_create_a_user_with_a_duplicate_phone(): void
+    {
+        Sanctum::actingAs($this->makeAdmin());
+        $existing = User::factory()->create(['phone' => '9812345678']);
+
+        $response = $this->postJson('/api/v1/admin/users', [
+            'name' => 'Someone Else',
+            'phone' => '9812345678',
+            'nationality' => 'India',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
     public function test_admin_adjust_defaults_to_crediting_the_account_not_the_wallet(): void
     {
         $admin = $this->makeAdmin();

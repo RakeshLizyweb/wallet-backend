@@ -32,6 +32,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
 
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::post('/', [UserController::class, 'store'])->name('store');
         Route::get('{id}', [UserController::class, 'show'])->name('show');
         Route::put('{id}/status', [UserController::class, 'updateStatus'])->name('status');
         Route::put('{id}/tier', [UserController::class, 'updateTier'])->name('tier');

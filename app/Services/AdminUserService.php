@@ -25,6 +25,25 @@ class AdminUserService
         return $this->users->findWithVerification($id);
     }
 
+    /**
+     * Admin-created users skip the phone+OTP registration flow, so they're
+     * marked phone-verified immediately — the admin is vouching for them —
+     * which lets them request a login OTP right away. Wallet/Account are
+     * created automatically via UserObserver.
+     */
+    public function create(string $name, string $phone, string $nationality): User
+    {
+        return $this->users->create([
+            'name' => $name,
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'nationality' => $nationality,
+            'upi_handle' => $this->users->generateUniqueUpiHandle($phone),
+            'status' => UserStatus::Active->value,
+            'tier' => UserTier::Basic->value,
+        ]);
+    }
+
     public function updateStatus(User $user, UserStatus $status): User
     {
         $payload = ['status' => $status->value];

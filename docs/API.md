@@ -420,7 +420,8 @@ Body: `{ "username": "alice_support", "password": "min 8 chars" }`. Username mus
 Aggregate counts: users, wallets (total/frozen balance), transactions (today/pending), verifications, rewards.
 
 ### Users
-- `GET /admin/users` — paginated. Query: `status`, `tier`, `search`, `per_page`.
+- `GET /admin/users` — paginated. Query: `status`, `tier`, `nationality`, `search` (matches name/phone/UPI handle), `per_page`.
+- `POST /admin/users` — creates a user directly from the admin panel (walk-in customers, support-assisted signups). Body: `{ "name": "...", "phone": "...", "nationality": "..." }` (same rules as self-registration). The account is created **active and phone-verified** immediately — no OTP round-trip — so it can request a login OTP right away; the user still sets their own PIN on first login. Rejects a phone number that's already registered.
 - `GET /admin/users/{id}`
 - `PUT /admin/users/{id}/status` — body `{ "status": "active|deactivated|deleted" }`
 - `PUT /admin/users/{id}/tier` — body `{ "tier": "basic|verified|premium" }`
