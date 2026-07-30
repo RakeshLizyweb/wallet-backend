@@ -147,10 +147,7 @@ Rate limit: `auth`.
 **Body:** `{ "phone": "...", "otp": "123456", "pin": "222222", "pin_confirmation": "222222" }`
 
 ### Me — `GET /auth/me` 🔑 auth
-Returns the authenticated user's profile (`UserResource`).
-
-### Update nationality — `PUT /auth/nationality` 🔑 auth
-**Body:** `{ "nationality": "Ivory Coast" }` — must be one of `config('countries.list')`. Changeable anytime after registration; only affects which document type is required on *future* verification submissions (past submissions keep the `document_type` they were submitted with).
+Returns the authenticated user's profile (`UserResource`). `nationality` is set once at registration (§1) and is not editable afterward — it's what decides passport vs. citizen ID for identity verification (§10).
 
 ### Logout — `POST /auth/logout` 🔑 auth
 Revokes the current access token only.

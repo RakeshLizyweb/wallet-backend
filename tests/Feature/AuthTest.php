@@ -104,29 +104,6 @@ class AuthTest extends TestCase
         $response->assertStatus(429);
     }
 
-    public function test_user_can_update_nationality_after_registration(): void
-    {
-        $user = User::factory()->create(['nationality' => 'India']);
-
-        $response = $this->actingAs($user, 'sanctum')->putJson('/api/v1/auth/nationality', [
-            'nationality' => 'Ivory Coast',
-        ]);
-
-        $response->assertOk()->assertJsonPath('data.nationality', 'Ivory Coast');
-        $this->assertEquals('Ivory Coast', $user->fresh()->nationality);
-    }
-
-    public function test_updating_nationality_rejects_unknown_country(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user, 'sanctum')->putJson('/api/v1/auth/nationality', [
-            'nationality' => 'Narnia',
-        ]);
-
-        $response->assertStatus(422);
-    }
-
     public function test_unauthenticated_request_returns_clean_json_regardless_of_accept_header(): void
     {
         // Plain get() sends no Accept header, unlike getJson(). A client that

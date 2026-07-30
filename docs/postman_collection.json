@@ -29,8 +29,6 @@
         { "name": "Reset PIN", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}],
           "url": "{{base_url}}/auth/reset-pin", "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9000000001\",\n  \"otp\": \"123456\",\n  \"pin\": \"111111\",\n  \"pin_confirmation\": \"111111\"\n}" } } },
         { "name": "Me", "request": { "method": "GET", "url": "{{base_url}}/auth/me" } },
-        { "name": "Update Nationality", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}],
-          "url": "{{base_url}}/auth/nationality", "body": { "mode": "raw", "raw": "{\n  \"nationality\": \"Ivory Coast\"\n}" } } },
         { "name": "Logout", "request": { "method": "POST", "url": "{{base_url}}/auth/logout" } },
         { "name": "Logout All Devices", "request": { "method": "POST", "url": "{{base_url}}/auth/logout-all" } },
         { "name": "Refresh Token", "request": { "method": "POST", "url": "{{base_url}}/auth/refresh" } },
