@@ -40,6 +40,13 @@ class SendTransferNotifications
                 'account_to_wallet',
                 ['reference_number' => $transfer->reference_number]
             ),
+            TransferType::WalletToAccount => $this->notificationService->send(
+                $transfer->senderUser,
+                'Moved to account',
+                "{$transfer->amount} CFA was moved from your wallet to your account.",
+                'wallet_to_account',
+                ['reference_number' => $transfer->reference_number]
+            ),
         };
     }
 

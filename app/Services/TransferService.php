@@ -211,6 +211,56 @@ class TransferService
         });
     }
 
+    /**
+     * Moves money from the user's own Wallet into their own Account — the
+     * reverse of accountToWallet(). Same self-transfer exemption applies: not
+     * subject to the monthly outbound transfer limit and doesn't touch any
+     * bank account, straight between the user's own two in-app balances.
+     */
+    public function walletToAccount(User $user, float $amount, string $pin, ?string $note = null): Transfer
+    {
+        $this->pinService->verifyPin($user, $pin);
+
+        $wallet = $this->walletService->getForUser($user);
+        $account = $this->accountService->getForUser($user);
+
+        $fee = round($amount * config('wallet.fees.wallet_to_account', 0), 2);
+        $total = round($amount + $fee, 2);
+        $reference = $this->walletService->generateReferenceNumber();
+
+        return DB::transaction(function () use ($user, $wallet, $account, $amount, $fee, $total, $reference, $note) {
+            $transfer = $this->transfers->create([
+                'reference_number' => $reference,
+                'type' => TransferType::WalletToAccount->value,
+                'sender_user_id' => $user->id,
+                'receiver_user_id' => $user->id,
+                'sender_wallet_id' => $wallet->id,
+                'receiver_account_id' => $account->id,
+                'amount' => $amount,
+                'fee' => $fee,
+                'total_amount' => $total,
+                'status' => TransferStatus::Pending->value,
+                'sender_note' => $note,
+            ]);
+
+            $this->walletService->debit(
+                $wallet, $total, LedgerCategory::WalletToAccount, $reference, $transfer,
+                'Moved to account'
+            );
+
+            $this->accountService->credit(
+                $account, $amount, LedgerCategory::WalletToAccount, $reference, $transfer,
+                'Moved from wallet'
+            );
+
+            $transfer->update(['status' => TransferStatus::Success->value, 'completed_at' => now()]);
+
+            TransferCompleted::dispatch($transfer->fresh());
+
+            return $transfer->fresh();
+        });
+    }
+
     public function walletToBank(User $user, BankAccount $bankAccount, float $amount, string $pin, ?string $note = null): Transfer
     {
         $this->pinService->verifyPin($user, $pin);
@@ -346,6 +396,16 @@ class TransferService
 
                 $this->walletService->debit(
                     $transfer->receiverWallet, (float) $transfer->amount, LedgerCategory::Reversal,
+                    $reference, $transfer, "Reversal: {$reason}"
+                );
+            } elseif ($transfer->type === TransferType::WalletToAccount) {
+                $this->walletService->credit(
+                    $transfer->senderWallet, (float) $transfer->total_amount, LedgerCategory::Reversal,
+                    $reference, $transfer, "Reversal: {$reason}"
+                );
+
+                $this->accountService->debit(
+                    $transfer->receiverAccount, (float) $transfer->amount, LedgerCategory::Reversal,
                     $reference, $transfer, "Reversal: {$reason}"
                 );
             }
