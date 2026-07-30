@@ -9,6 +9,7 @@ enum LedgerCategory: string
     case BankToWallet = 'bank_to_wallet';
     case AccountToAccount = 'account_to_account';
     case AccountToWallet = 'account_to_wallet';
+    case WalletToAccount = 'wallet_to_account';
     case Reward = 'reward';
     case Refund = 'refund';
     case Fee = 'fee';

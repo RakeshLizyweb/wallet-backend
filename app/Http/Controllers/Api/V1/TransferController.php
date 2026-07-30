@@ -7,6 +7,7 @@ use App\Http\Requests\Transaction\AccountToAccountRequest;
 use App\Http\Requests\Transaction\AccountToWalletRequest;
 use App\Http\Requests\Transaction\BankToWalletRequest;
 use App\Http\Requests\Transaction\TransferHistoryRequest;
+use App\Http\Requests\Transaction\WalletToAccountRequest;
 use App\Http\Requests\Transaction\WalletToBankRequest;
 use App\Http\Requests\Transaction\WalletToWalletRequest;
 use App\Http\Resources\TransferResource;
@@ -60,6 +61,18 @@ class TransferController extends Controller
         );
 
         return $this->success(new TransferResource($transfer), 'Moved to wallet successfully.', 201);
+    }
+
+    public function walletToAccount(WalletToAccountRequest $request): JsonResponse
+    {
+        $transfer = $this->transferService->walletToAccount(
+            $request->user(),
+            (float) $request->amount,
+            $request->pin,
+            $request->input('note')
+        );
+
+        return $this->success(new TransferResource($transfer), 'Moved to account successfully.', 201);
     }
 
     public function walletToBank(WalletToBankRequest $request): JsonResponse

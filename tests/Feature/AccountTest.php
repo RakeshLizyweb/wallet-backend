@@ -92,6 +92,63 @@ class AccountTest extends TestCase
         $this->assertEquals(200, $user->wallet->fresh()->balance);
     }
 
+    public function test_wallet_to_account_moves_own_money_between_own_buckets(): void
+    {
+        $user = User::factory()->withPin('111111')->create();
+        app(\App\Services\WalletService::class)->credit($user->wallet, 500, \App\Enums\LedgerCategory::Reward);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/v1/transfers/wallet-to-account', [
+            'amount' => 200,
+            'pin' => '111111',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.type', 'wallet_to_account')
+            ->assertJsonPath('data.direction', 'internal');
+
+        $this->assertEquals(300, $user->wallet->fresh()->balance);
+        $this->assertEquals(200, $user->account->fresh()->balance);
+    }
+
+    public function test_wallet_to_account_is_not_subject_to_the_outbound_transfer_limit(): void
+    {
+        $user = User::factory()->withPin('111111')->create();
+        app(\App\Services\WalletService::class)->credit($user->wallet, 200000, \App\Enums\LedgerCategory::Reward);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/transfers/wallet-to-account', [
+            'amount' => 160000,
+            'pin' => '111111',
+        ])->assertCreated();
+    }
+
+    public function test_admin_can_reverse_a_wallet_to_account_transfer(): void
+    {
+        $user = User::factory()->withPin('111111')->create();
+        app(\App\Services\WalletService::class)->credit($user->wallet, 500, \App\Enums\LedgerCategory::Reward);
+
+        Sanctum::actingAs($user);
+        $reference = $this->postJson('/api/v1/transfers/wallet-to-account', [
+            'amount' => 200,
+            'pin' => '111111',
+        ])->assertCreated()->json('data.reference_number');
+
+        Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create();
+        $admin->assignRole('super-admin');
+
+        Sanctum::actingAs($admin);
+        $this->postJson("/api/v1/admin/transactions/{$reference}/reverse", [
+            'reason' => 'test reversal',
+        ])->assertOk();
+
+        $this->assertEquals(500, $user->wallet->fresh()->balance);
+        $this->assertEquals(0, $user->account->fresh()->balance);
+    }
+
     public function test_account_to_wallet_is_not_subject_to_the_outbound_transfer_limit(): void
     {
         // Basic tier monthly limit is 150000 by default; account_to_wallet is

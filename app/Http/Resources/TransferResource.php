@@ -11,17 +11,18 @@ class TransferResource extends JsonResource
     {
         $userId = $request->user()?->id;
 
-        // wallet_to_bank, bank_to_wallet, and account_to_wallet are always
-        // self-transfers (sender_user_id is the acting user on both sides), so
-        // direction must be derived from the transfer type rather than from
-        // sender/receiver comparison, which only distinguishes parties for
-        // wallet_to_wallet/account_to_account transfers. account_to_wallet gets
-        // its own 'internal' direction (not credit/debit) since it's a self
-        // top-up, not money actually leaving or entering the user's custody.
+        // wallet_to_bank, bank_to_wallet, account_to_wallet, and
+        // wallet_to_account are always self-transfers (sender_user_id is the
+        // acting user on both sides), so direction must be derived from the
+        // transfer type rather than from sender/receiver comparison, which
+        // only distinguishes parties for wallet_to_wallet/account_to_account
+        // transfers. The two internal moves get their own 'internal'
+        // direction (not credit/debit) since it's money relocating between a
+        // user's own balances, not actually leaving or entering their custody.
         $direction = match ($this->type?->value) {
             'bank_to_wallet' => 'credit',
             'wallet_to_bank' => 'debit',
-            'account_to_wallet' => 'internal',
+            'account_to_wallet', 'wallet_to_account' => 'internal',
             default => $this->sender_user_id === $userId ? 'debit' : 'credit',
         };
 

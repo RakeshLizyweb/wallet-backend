@@ -43,6 +43,7 @@ return [
         'bank_to_wallet' => (float) env('FEE_BANK_TO_WALLET', 0),
         'account_to_account' => (float) env('FEE_ACCOUNT_TO_ACCOUNT', 0.01),
         'account_to_wallet' => (float) env('FEE_ACCOUNT_TO_WALLET', 0),
+        'wallet_to_account' => (float) env('FEE_WALLET_TO_ACCOUNT', 0),
     ],
 
     'rewards' => [

@@ -84,6 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('bank-to-wallet', [TransferController::class, 'bankToWallet'])->name('bank-to-wallet');
         Route::post('account-to-account', [TransferController::class, 'accountToAccount'])->name('account-to-account');
         Route::post('account-to-wallet', [TransferController::class, 'accountToWallet'])->name('account-to-wallet');
+        Route::post('wallet-to-account', [TransferController::class, 'walletToAccount'])->name('wallet-to-account');
         Route::get('{reference}', [TransferController::class, 'show'])->name('show');
     });
 
