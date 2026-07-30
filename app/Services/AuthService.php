@@ -118,11 +118,6 @@ class AuthService
         return $this->pinService->forceSetPin($user, $newPin);
     }
 
-    public function updateNationality(User $user, string $nationality): User
-    {
-        return $this->users->update($user, ['nationality' => $nationality]);
-    }
-
     public function logout(User $user): void
     {
         $user->currentAccessToken()?->delete();
