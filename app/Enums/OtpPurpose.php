@@ -9,4 +9,5 @@ enum OtpPurpose: string
     case ResetPin = 'reset_pin';
     case DeleteAccount = 'delete_account';
     case AdminPasswordReset = 'admin_password_reset';
+    case AdminDebitConfirmation = 'admin_debit_confirmation';
 }

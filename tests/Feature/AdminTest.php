@@ -154,4 +154,108 @@ class AdminTest extends TestCase
 
         $this->assertEquals(0, $target->account->fresh()->balance);
     }
+
+    public function test_admin_debit_without_otp_or_force_is_rejected(): void
+    {
+        $admin = $this->makeAdmin();
+        $target = User::factory()->create();
+        $target->account->update(['balance' => 500]);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust", [
+            'type' => 'debit',
+            'amount' => 100,
+            'reason' => 'Chargeback',
+        ])->assertStatus(422);
+
+        $this->assertEquals(500, $target->account->fresh()->balance);
+    }
+
+    public function test_admin_can_debit_after_user_confirms_otp(): void
+    {
+        $admin = $this->makeAdmin();
+        $target = User::factory()->create();
+        $target->account->update(['balance' => 500]);
+
+        Sanctum::actingAs($admin);
+
+        $otpResponse = $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust/send-otp")
+            ->assertOk();
+        $otp = $otpResponse->json('data.debug_otp');
+        $this->assertNotNull($otp);
+
+        $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust", [
+            'type' => 'debit',
+            'amount' => 100,
+            'reason' => 'Chargeback',
+            'otp' => $otp,
+        ])->assertOk()->assertJsonPath('data.user.account_balance', 400);
+
+        $this->assertEquals(400, $target->account->fresh()->balance);
+    }
+
+    public function test_admin_debit_with_wrong_otp_is_rejected(): void
+    {
+        $admin = $this->makeAdmin();
+        $target = User::factory()->create();
+        $target->account->update(['balance' => 500]);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust/send-otp")->assertOk();
+
+        $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust", [
+            'type' => 'debit',
+            'amount' => 100,
+            'reason' => 'Chargeback',
+            'otp' => '000000',
+        ])->assertStatus(422);
+
+        $this->assertEquals(500, $target->account->fresh()->balance);
+    }
+
+    public function test_admin_can_force_debit_with_correct_admin_password(): void
+    {
+        $admin = User::factory()->create(['username' => 'forcedebitadmin', 'password' => 'AdminPass123!']);
+        Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $admin->assignRole('super-admin');
+
+        $target = User::factory()->create();
+        $target->account->update(['balance' => 500]);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust", [
+            'type' => 'debit',
+            'amount' => 100,
+            'reason' => 'Chargeback',
+            'force' => true,
+            'admin_password' => 'AdminPass123!',
+        ])->assertOk();
+
+        $this->assertEquals(400, $target->account->fresh()->balance);
+    }
+
+    public function test_admin_force_debit_with_wrong_admin_password_is_rejected(): void
+    {
+        $admin = User::factory()->create(['username' => 'forcedebitadmin2', 'password' => 'AdminPass123!']);
+        Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $admin->assignRole('super-admin');
+
+        $target = User::factory()->create();
+        $target->account->update(['balance' => 500]);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/v1/admin/wallets/{$target->wallet->id}/adjust", [
+            'type' => 'debit',
+            'amount' => 100,
+            'reason' => 'Chargeback',
+            'force' => true,
+            'admin_password' => 'WrongPassword!',
+        ])->assertStatus(401);
+
+        $this->assertEquals(500, $target->account->fresh()->balance);
+    }
 }

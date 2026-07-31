@@ -45,6 +45,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
         Route::post('{wallet}/freeze', [WalletController::class, 'freeze'])->name('freeze');
         Route::post('{wallet}/unfreeze', [WalletController::class, 'unfreeze'])->name('unfreeze');
         Route::post('{wallet}/adjust', [WalletController::class, 'adjust'])->name('adjust');
+        Route::post('{wallet}/adjust/send-otp', [WalletController::class, 'sendAdjustOtp'])->name('adjust.send-otp');
     });
 
     Route::prefix('transactions')->name('transactions.')->group(function () {
