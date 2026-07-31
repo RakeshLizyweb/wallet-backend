@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Account;
 use App\Models\IdentityVerification;
 use App\Models\ScratchCard;
 use App\Models\Transfer;
@@ -20,8 +21,15 @@ class AdminDashboardService
                 'premium' => User::where('tier', 'premium')->count(),
             ],
             'wallets' => [
-                'total_balance' => (float) Wallet::sum('balance'),
-                'total_frozen' => (float) Wallet::sum('frozen_balance'),
+                // "Wallet" balance is only what users have moved into their
+                // spendable pocket — nearly all incoming money (transfers,
+                // admin credits) lands in Account instead, so the platform
+                // total shown to admins must include both buckets or it
+                // reads as far too low.
+                'total_balance' => (float) Wallet::sum('balance') + (float) Account::sum('balance'),
+                'total_frozen' => (float) Wallet::sum('frozen_balance') + (float) Account::sum('frozen_balance'),
+                'total_wallet_balance' => (float) Wallet::sum('balance'),
+                'total_account_balance' => (float) Account::sum('balance'),
                 'active' => Wallet::where('status', 'active')->count(),
                 'frozen' => Wallet::where('status', 'frozen')->count(),
             ],
