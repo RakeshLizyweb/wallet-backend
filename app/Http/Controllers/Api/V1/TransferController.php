@@ -104,6 +104,19 @@ class TransferController extends Controller
         return $this->success(new TransferResource($transfer), 'Deposit to wallet successful.', 201);
     }
 
+    public function recentContacts(Request $request): JsonResponse
+    {
+        $contacts = $this->transferService->recentContacts($request->user())
+            ->map(fn (array $row) => [
+                'name' => $row['user']->name,
+                'phone' => $row['user']->phone,
+                'upi_handle' => $row['user']->upi_handle,
+                'last_transfer_at' => $row['last_transfer_at']?->toIso8601String(),
+            ]);
+
+        return $this->success($contacts->values());
+    }
+
     public function index(TransferHistoryRequest $request): JsonResponse
     {
         $history = $this->transferService->historyForUser(

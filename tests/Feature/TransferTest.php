@@ -161,4 +161,31 @@ class TransferTest extends TestCase
         $this->assertEquals(1000, (float) $sender->wallet->fresh()->balance);
         $this->assertEquals(0, (float) $receiver->account->fresh()->balance);
     }
+
+    public function test_recent_contacts_lists_distinct_peers_most_recent_first(): void
+    {
+        $user = User::factory()->withPin('123456')->create();
+        $alice = User::factory()->create();
+        $bob = User::factory()->create();
+        app(WalletService::class)->credit($user->wallet, 1000, LedgerCategory::Reward);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/transfers/wallet-to-wallet', [
+            'receiver' => $alice->upi_handle, 'amount' => 100, 'pin' => '123456',
+        ])->assertCreated();
+        $this->postJson('/api/v1/transfers/wallet-to-wallet', [
+            'receiver' => $bob->upi_handle, 'amount' => 50, 'pin' => '123456',
+        ])->assertCreated();
+        // A second payment to Alice must not create a duplicate entry —
+        // she should still appear once, moved to the front (most recent).
+        $this->postJson('/api/v1/transfers/wallet-to-wallet', [
+            'receiver' => $alice->upi_handle, 'amount' => 20, 'pin' => '123456',
+        ])->assertCreated();
+
+        $response = $this->getJson('/api/v1/transfers/recent-contacts')->assertOk();
+
+        $response->assertJsonCount(2, 'data');
+        $this->assertEquals($alice->phone, $response->json('data.0.phone'));
+        $this->assertEquals($bob->phone, $response->json('data.1.phone'));
+    }
 }

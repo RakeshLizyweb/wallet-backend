@@ -439,4 +439,9 @@ class TransferService
     {
         return $this->transfers->paginateAll($filters, $perPage);
     }
+
+    public function recentContacts(User $user, int $limit = 10)
+    {
+        return $this->transfers->recentContacts($user, $limit);
+    }
 }
