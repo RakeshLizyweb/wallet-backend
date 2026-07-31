@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
             $table->foreignId('identity_verification_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('card_number_encrypted');
+            // Laravel's Crypt::encryptString() output (base64 JSON envelope with
+            // iv/value/mac/tag) regularly exceeds 200+ chars — text() keeps this
+            // immune to whatever the app's global default string length is.
+            $table->text('card_number_encrypted');
             $table->string('card_number_last4', 4);
             $table->date('expiry_date');
             $table->string('status', 20)->default('inactive');
