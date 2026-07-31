@@ -39,6 +39,23 @@ class AdminTest extends TestCase
             ->assertJsonStructure(['data' => ['users', 'wallets', 'transactions', 'fees', 'verifications', 'rewards']]);
     }
 
+    public function test_dashboard_total_balance_includes_both_wallet_and_account_buckets(): void
+    {
+        $user = User::factory()->create();
+        // Nearly all incoming money (transfers, admin credits) lands in
+        // Account rather than Wallet, so the platform total must sum both —
+        // summing Wallet alone would badly understate it.
+        $user->wallet->update(['balance' => 100]);
+        $user->account->update(['balance' => 900]);
+
+        Sanctum::actingAs($this->makeAdmin());
+
+        $response = $this->getJson('/api/v1/admin/dashboard')->assertOk();
+        $this->assertEquals(100, $response->json('data.wallets.total_wallet_balance'));
+        $this->assertEquals(900, $response->json('data.wallets.total_account_balance'));
+        $this->assertEquals(1000, $response->json('data.wallets.total_balance'));
+    }
+
     public function test_dashboard_reports_fees_collected_from_successful_transfers_only(): void
     {
         $sender = User::factory()->withPin('123456')->create();
