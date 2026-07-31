@@ -5,6 +5,7 @@ namespace App\Repositories\Contracts;
 use App\Models\Transfer;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 interface TransferRepositoryInterface extends BaseRepositoryInterface
 {
@@ -17,4 +18,6 @@ interface TransferRepositoryInterface extends BaseRepositoryInterface
     public function sumAmountBetween(array $filters): float;
 
     public function sumFeesBetween(array $filters): float;
+
+    public function recentContacts(User $user, int $limit = 10): Collection;
 }

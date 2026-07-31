@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Repositories\Contracts\TransferRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class TransferRepository extends BaseRepository implements TransferRepositoryInterface
 {
@@ -55,6 +56,34 @@ class TransferRepository extends BaseRepository implements TransferRepositoryInt
         $this->applyFilters($query, $filters);
 
         return (float) $query->sum('fee');
+    }
+
+    /**
+     * Distinct people the user has sent/received peer payments with, most
+     * recent first — scans a bounded recent window then dedupes in memory
+     * since "most recent transfer per counterparty" isn't a plain GROUP BY.
+     */
+    public function recentContacts(User $user, int $limit = 10): Collection
+    {
+        return $this->model->newQuery()
+            ->whereIn('type', ['wallet_to_wallet', 'account_to_account'])
+            ->where('status', 'success')
+            ->where(function (Builder $q) use ($user) {
+                $q->where('sender_user_id', $user->id)->orWhere('receiver_user_id', $user->id);
+            })
+            ->with(['senderUser:id,name,phone,upi_handle', 'receiverUser:id,name,phone,upi_handle'])
+            ->latest('id')
+            ->limit(200)
+            ->get()
+            ->map(function (Transfer $transfer) use ($user) {
+                $other = $transfer->sender_user_id === $user->id ? $transfer->receiverUser : $transfer->senderUser;
+
+                return $other ? ['user' => $other, 'last_transfer_at' => $transfer->created_at] : null;
+            })
+            ->filter()
+            ->unique(fn (array $row) => $row['user']->id)
+            ->take($limit)
+            ->values();
     }
 
     protected function applyFilters(Builder $query, array $filters): void

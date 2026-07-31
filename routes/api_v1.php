@@ -78,6 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('transfers')->name('transfers.')->middleware('throttle:sensitive')->group(function () {
         Route::get('/', [TransferController::class, 'index'])->name('index');
+        Route::get('recent-contacts', [TransferController::class, 'recentContacts'])->name('recent-contacts');
         Route::post('wallet-to-wallet', [TransferController::class, 'walletToWallet'])->name('wallet-to-wallet');
         Route::post('wallet-to-bank', [TransferController::class, 'walletToBank'])->name('wallet-to-bank');
         Route::post('bank-to-wallet', [TransferController::class, 'bankToWallet'])->name('bank-to-wallet');
