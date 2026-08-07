@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('users/search', [UserSearchController::class, 'search'])->name('users.search');
+    Route::post('users/lookup-contacts', [UserSearchController::class, 'lookupContacts'])->name('users.lookup-contacts');
 
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [BankAccountController::class, 'index'])->name('index');
