@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'document_number' => $this->latestIdentityVerification?->document_number,
             'email' => $this->email,
             'upi_handle' => $this->upi_handle,
+            'referral_code' => $this->referral_code,
             'status' => $this->status?->value,
             'tier' => $this->tier?->value,
             'has_pin' => $this->hasPin(),

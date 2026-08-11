@@ -17,10 +17,11 @@ class AuthService
         protected OtpService $otpService,
         protected DeviceService $deviceService,
         protected PinService $pinService,
+        protected ReferralService $referralService,
     ) {
     }
 
-    public function register(string $name, string $phone, string $nationality, ?string $ip = null): array
+    public function register(string $name, string $phone, string $nationality, ?string $ip = null, ?string $referralCode = null): array
     {
         $user = $this->users->findByPhone($phone);
 
@@ -34,8 +35,11 @@ class AuthService
                 'phone' => $phone,
                 'nationality' => $nationality,
                 'upi_handle' => $this->users->generateUniqueUpiHandle($phone),
+                'referral_code' => $this->users->generateUniqueReferralCode(),
                 'status' => UserStatus::Active->value,
             ]);
+
+            $this->referralService->redeem($user, $referralCode);
         } else {
             $user->update(['name' => $name, 'nationality' => $nationality]);
         }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\LimitController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PinController;
 use App\Http\Controllers\Api\V1\QrCodeController;
+use App\Http\Controllers\Api\V1\ReferralController;
 use App\Http\Controllers\Api\V1\RewardController;
 use App\Http\Controllers\Api\V1\TransferController;
 use App\Http\Controllers\Api\V1\VerificationController;
@@ -109,6 +110,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('virtual-card', [VirtualCardController::class, 'show'])->name('virtual-card.show');
+
+    Route::get('referrals/summary', [ReferralController::class, 'summary'])->name('referrals.summary');
 
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');

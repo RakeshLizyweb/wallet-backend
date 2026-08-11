@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Enums\UserTier;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -35,6 +36,8 @@ class User extends Authenticatable
         'username',
         'password',
         'upi_handle',
+        'referral_code',
+        'referred_by_id',
         'status',
         'tier',
         'reward_points',
@@ -104,6 +107,23 @@ class User extends Authenticatable
     public function latestIdentityVerification(): HasOne
     {
         return $this->hasOne(IdentityVerification::class)->latestOfMany();
+    }
+
+    public function referredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'referred_by_id');
+    }
+
+    /** People this user has referred (one Referral row per person they brought in). */
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    /** The Referral record for how this user themselves was referred in, if any. */
+    public function referredAs(): HasOne
+    {
+        return $this->hasOne(Referral::class, 'referred_user_id');
     }
 
     public function hasPin(): bool
