@@ -27,7 +27,13 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        $result = $this->authService->register($request->name, $request->phone, $request->nationality, $request->ip());
+        $result = $this->authService->register(
+            $request->name,
+            $request->phone,
+            $request->nationality,
+            $request->ip(),
+            $request->input('referral_code')
+        );
 
         return $this->success(
             ['phone' => $result['user']->phone, 'debug_otp' => $result['otp']->plain_code ?? null],

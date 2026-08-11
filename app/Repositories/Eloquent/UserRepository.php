@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class UserRepository extends BaseRepository implements UserRepositoryInterface
 {
@@ -28,6 +29,11 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         return $this->model->newQuery()->where('username', $username)->first();
     }
 
+    public function findByReferralCode(string $code): ?User
+    {
+        return $this->model->newQuery()->where('referral_code', $code)->first();
+    }
+
     public function generateUniqueUpiHandle(string $phone): string
     {
         $domain = config('wallet.qr.domain', 'wallet');
@@ -45,6 +51,15 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     public function findWithVerification(int $id): User
     {
         return $this->model->newQuery()->with('latestIdentityVerification')->findOrFail($id);
+    }
+
+    public function generateUniqueReferralCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+        } while ($this->model->newQuery()->where('referral_code', $code)->exists());
+
+        return $code;
     }
 
     public function paginateAll(array $filters, int $perPage = 20): LengthAwarePaginator

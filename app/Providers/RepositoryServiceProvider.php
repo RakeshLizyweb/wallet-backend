@@ -8,6 +8,7 @@ use App\Repositories\Contracts\BankAccountRepositoryInterface;
 use App\Repositories\Contracts\DeviceRepositoryInterface;
 use App\Repositories\Contracts\IdentityVerificationRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
+use App\Repositories\Contracts\ReferralRepositoryInterface;
 use App\Repositories\Contracts\ScratchCardRepositoryInterface;
 use App\Repositories\Contracts\TransferRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -20,6 +21,7 @@ use App\Repositories\Eloquent\BankAccountRepository;
 use App\Repositories\Eloquent\DeviceRepository;
 use App\Repositories\Eloquent\IdentityVerificationRepository;
 use App\Repositories\Eloquent\OtpRepository;
+use App\Repositories\Eloquent\ReferralRepository;
 use App\Repositories\Eloquent\ScratchCardRepository;
 use App\Repositories\Eloquent\TransferRepository;
 use App\Repositories\Eloquent\UserRepository;
@@ -47,6 +49,7 @@ class RepositoryServiceProvider extends ServiceProvider
         BankAccountRepositoryInterface::class => BankAccountRepository::class,
         TransferRepositoryInterface::class => TransferRepository::class,
         ScratchCardRepositoryInterface::class => ScratchCardRepository::class,
+        ReferralRepositoryInterface::class => ReferralRepository::class,
         IdentityVerificationRepositoryInterface::class => IdentityVerificationRepository::class,
         VirtualCardRepositoryInterface::class => VirtualCardRepository::class,
     ];

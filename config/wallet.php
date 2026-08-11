@@ -52,6 +52,13 @@ return [
         'min_transaction_for_reward' => (float) env('REWARD_MIN_TXN_AMOUNT', 100),
     ],
 
+    // Paid out once, when the referred person completes their first
+    // successful transfer as sender - never at registration itself.
+    'referrals' => [
+        'referrer_bonus' => (float) env('REFERRAL_REFERRER_BONUS', 100),
+        'referred_bonus' => (float) env('REFERRAL_REFERRED_BONUS', 300),
+    ],
+
     'verification' => [
         'passport_expiry_buffer_months' => (int) env('PASSPORT_EXPIRY_BUFFER_MONTHS', 6),
     ],
